@@ -101,10 +101,6 @@ public class AuthController {
     // }
     // }
 
-    // @PostMapping("/api/auth/register/mod")
-    // public ResponseEntity<String> registerUser(@RequestBody RegisterModRequest registerRequest) {
-    // return ResponseEntity.ok(authService.register(registerRequest));
-    // }
 
     @GetMapping("/api/testJWT")
     public String getMethodName(@RequestParam String param) {
