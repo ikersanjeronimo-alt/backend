@@ -20,9 +20,8 @@ public class GoogleAuthService {
     @Autowired
     UserRepository userRepository;
 
-    public String generateKey(String email) {
+    public String generateKey() {
         GoogleAuthenticatorKey key = googleAuthenticator.createCredentials();
-
         return key.getKey();
     }
 

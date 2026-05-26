@@ -39,7 +39,7 @@ public class AuthService {
         newUserMod.setPassword(passwordEncoder.encode(registerModRequest.password()));
         newUserMod.setEmail(registerModRequest.email());
         newUserMod.setCompany(registerModRequest.company());
-        newUserMod.setSecretKey(googleAuthService.generateKey(newUserMod.getEmail()));
+        newUserMod.setSecretKey(googleAuthService.generateKey());
 
         try {
             userRepository.save(newUserMod);
@@ -56,23 +56,6 @@ public class AuthService {
             return Response.SC_OK;
         } else {
             return Response.SC_NOT_ACCEPTABLE;
-        }
-    }
-
-    public String register(RegisterModRequest registerRequest) {
-        User newUser = new User();
-        newUser.setUsername(registerRequest.username());
-        newUser.setPassword(passwordEncoder.encode(registerRequest.password()));
-        newUser.setEmail(registerRequest.email());
-        newUser.setCompany(registerRequest.company());
-        newUser.setSecretKey(googleAuthService.generateKey(newUser.getEmail()));
-        // newUser.setRole(Roles.valueOf(registerRequest.getRole()));
-
-        try {
-            userRepository.save(newUser);
-            return newUser.getSecretKey();
-        } catch (Exception e) {
-            return "ERROR CREATING USER";
         }
     }
 
