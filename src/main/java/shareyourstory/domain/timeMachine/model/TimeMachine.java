@@ -12,8 +12,6 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "TimeMachine")
-@Getter
-@Setter
 public class TimeMachine {
 
     @Id
@@ -24,6 +22,37 @@ public class TimeMachine {
     private String email;
     private Date deliveryDate;
 
+    public TimeMachine() {}
 
+    public int getId() {
+        return id;
+    }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Date getDeliveryDate() {
+        return deliveryDate;
+    }
+
+    public void setDeliveryDate(Date deliveryDate) {
+        this.deliveryDate = deliveryDate;
+    }
 }

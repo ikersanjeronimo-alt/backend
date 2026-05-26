@@ -1,4 +1,4 @@
-package shareyourstory.org.ShareYourStory;
+package shareyourstory;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

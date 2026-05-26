@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 import shareyourstory.domain.user.model.User;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Integer>{
+public interface UserRepository extends JpaRepository<User, Integer> {
 
     public Optional<User> findByEmail(String email);
-} 
+}
