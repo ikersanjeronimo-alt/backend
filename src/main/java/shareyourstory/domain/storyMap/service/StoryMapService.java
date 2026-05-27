@@ -1,8 +1,10 @@
 package shareyourstory.domain.storyMap.service;
 
 import java.util.List;
+import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import shareyourstory.domain.storyMap.dto.NewStoryMapRequest;
 import shareyourstory.domain.storyMap.model.StoryMap;
 import shareyourstory.domain.storyMap.repository.StoryMapRepository;
 
@@ -16,4 +18,18 @@ public class StoryMapService {
         return storyMapRepository.findAll();
     }
 
+    public int createStoryMap(NewStoryMapRequest newStoryMapRequest) {
+        StoryMap newStoryMap = new StoryMap();
+
+        newStoryMap.setMessage(newStoryMapRequest.message());
+        newStoryMap.setLatitude(newStoryMapRequest.latitude());
+        newStoryMap.setLongitude(newStoryMapRequest.longitude());
+
+        try {
+            storyMapRepository.save(newStoryMap);
+            return Response.SC_CREATED;
+        } catch (Exception e) {
+            return Response.SC_NOT_ACCEPTABLE;
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package shareyourstory.auth.service;
 
+import java.util.NoSuchElementException;
 import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -66,5 +67,38 @@ public class AuthService {
         }
 
         return "tkn";
+    }
+
+    public String manageUser2FA(String email) {
+        try {
+            User user = userRepository.findByEmail(email).get();
+
+            if (!user.isTwoFactorEnabled()) {
+                return googleAuthService.getQR(email, user.getSecretKey());
+            } else {
+                return "Already enabled";
+            }
+
+        } catch (NoSuchElementException e) {
+            return "USER NOT FOUND";
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }
+
+    public int enableQR(String email, int code) {
+        try {
+            User user = userRepository.findByEmail(email).get();
+
+            if (googleAuthService.isValid(user.getSecretKey(), code)) {
+                user.setTwoFactorEnabled(true);
+                userRepository.save(user);
+                return Response.SC_ACCEPTED;
+            } else {
+                return Response.SC_NOT_ACCEPTABLE;
+            }
+        } catch (NoSuchElementException e) {
+            return Response.SC_BAD_REQUEST;
+        }
     }
 }

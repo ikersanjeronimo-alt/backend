@@ -60,6 +60,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
 
-        return path.startsWith("/api/auth/register") || path.startsWith("/api/auth/login");
+        return path.startsWith("/api/auth/register") || path.startsWith("/api/auth/login") || path.startsWith("/api/auth/register/mod");
     }
 }

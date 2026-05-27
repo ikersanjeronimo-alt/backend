@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
-import shareyourstory.domain.user.model.User;
 import shareyourstory.domain.user.repository.UserRepository;
 
 @Service
@@ -25,18 +24,11 @@ public class GoogleAuthService {
         return key.getKey();
     }
 
-    public String getQR(String email) {
-        User user = null;
+    public String getQR(String email, String key) {
         String issuer = "ShareYourStory";
 
-        try {
-            user = userRepository.findByEmail(email).get();
-
-            return String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s", issuer, email,
-                    user.getSecretKey(), issuer);
-        } catch (Exception e) {
-            return "NOT USER FOUND";
-        }
+        return String.format("otpauth://totp/%s:%s?secret=%s&issuer=%s", issuer, email, key,
+                issuer);
     }
 
     public boolean isValid(String secretKey, int code) {

@@ -32,6 +32,8 @@ public class User implements UserDetails {
     @Column(unique = true)
     private String secretKey;
 
+    private boolean twoFactorEnabled = false;
+
     // @ManyToOne
     // private ProfessionType professionType;
     // @ManyToOne
@@ -114,5 +116,13 @@ public class User implements UserDetails {
 
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
+    }
+
+    public boolean isTwoFactorEnabled() {
+        return twoFactorEnabled;
+    }
+
+    public void setTwoFactorEnabled(boolean twoFactorEnabled) {
+        this.twoFactorEnabled = twoFactorEnabled;
     }
 }

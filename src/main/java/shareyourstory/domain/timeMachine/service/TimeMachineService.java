@@ -39,5 +39,4 @@ public class TimeMachineService {
 
         return Response.SC_CONFLICT;
     }
-
 }
