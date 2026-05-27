@@ -77,11 +77,4 @@ public class AuthController {
         System.out.println("asdasd");
         return "HI YOU ARE LOGED";
     }
-
-    @PostMapping("/api/mailTest")
-    public String mailTest(@RequestBody String entity) {
-        emailService.send();
-        return entity;
-    }
-
 }

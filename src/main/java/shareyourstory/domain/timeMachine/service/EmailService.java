@@ -2,25 +2,25 @@ package shareyourstory.domain.timeMachine.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
-import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import shareyourstory.domain.timeMachine.model.TimeMachine;
 
 @Service
-public class EmailService implements MailSender {
+public class EmailService {
 
     @Autowired
     JavaMailSender javaMailSender;
 
-    @Override
-    public void send(SimpleMailMessage... simpleMessages) throws MailException {
+    public void send(TimeMachine timeMachine) throws MailException {
 
         SimpleMailMessage mail = new SimpleMailMessage();
+        mail.setFrom("shareyourstoyrypbl@gmail.com");
+        mail.setTo(timeMachine.getEmail());
+        mail.setSubject("Tu mensaje programado");
+        mail.setText(timeMachine.getMessage());
 
-        mail.setFrom("ikersanjeronimo@gmail.com");
-        mail.setTo("iker.sanjeronimo@alumni.mondragon.edu");
-        mail.setText("TEST EMAIL");
         javaMailSender.send(mail);
     }
 }
