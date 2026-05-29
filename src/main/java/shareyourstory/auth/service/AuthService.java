@@ -54,7 +54,7 @@ public class AuthService {
     public int loginMod(LoginModRequest loginModRequest) {
         if (authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 loginModRequest.email(), loginModRequest.password())) != null) {
-            return Response.SC_OK;
+            return Response.SC_ACCEPTED;
         } else {
             return Response.SC_NOT_ACCEPTABLE;
         }
@@ -100,5 +100,5 @@ public class AuthService {
         } catch (NoSuchElementException e) {
             return Response.SC_BAD_REQUEST;
         }
-    }
+    }   
 }

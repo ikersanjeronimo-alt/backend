@@ -14,10 +14,8 @@ public class TimeMachineController {
     @Autowired
     TimeMachineService timeMachineService;
 
-    @PostMapping("/timeMachine/create")
+    @PostMapping("/api/timeMachine")
     public int createTimeMachine(@RequestBody TimeMachineDTO timeMachineDTO) {
         return timeMachineService.createTimeMachine(timeMachineDTO);
     }
-
-
 }

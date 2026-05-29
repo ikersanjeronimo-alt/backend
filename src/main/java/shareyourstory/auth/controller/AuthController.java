@@ -4,10 +4,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import shareyourstory.auth.JWT.JWTService;
 import shareyourstory.auth.dto.LoginModRequest;
 import shareyourstory.auth.dto.RegisterModRequest;
 import shareyourstory.auth.dto.ValidateQRRequest;
+import shareyourstory.auth.dto.Get2faQRResponse;
+import shareyourstory.auth.dto.LoginModWith2FAResponse;
 import shareyourstory.auth.service.AuthService;
 import shareyourstory.auth.service.GoogleAuthService;
 import shareyourstory.domain.timeMachine.service.EmailService;
@@ -40,8 +44,9 @@ public class AuthController {
     }
 
     @GetMapping("/api/auth/register/mod/2fa/qr")
-    public String get2faQR(@RequestParam String email) {
-        return authService.manageUser2FA(email);
+    public Get2faQRResponse get2faQR(@RequestParam String email) {
+        String otpauthUri = authService.manageUser2FA(email);
+        return new Get2faQRResponse(otpauthUri);
     }
 
     @PostMapping("/api/auth/register/mod/2fa/qr")
@@ -56,19 +61,18 @@ public class AuthController {
     }
 
     @PostMapping("/api/auth/login/mod/2fa/code")
-    public String validateLoginWithCode(@RequestBody ValidateQRRequest validateLoginRequest) {
-        String tkn = null;
+    public ResponseEntity<?> validateLoginWithCode(@RequestBody ValidateQRRequest validateLoginRequest) {
         User user = (User) userService.loadUserByUsername(validateLoginRequest.email());
 
-        if (user != null) {
-            if (googleAuthService.isValid(user.getSecretKey(), validateLoginRequest.code())) {
-                tkn = jwtService.createToken(user);
-                return tkn;
-            } else {
-                return tkn;
-            }
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado");
+        }
+
+        if (googleAuthService.isValid(user.getSecretKey(), validateLoginRequest.code())) {
+            String token = jwtService.createToken(user);
+            return ResponseEntity.ok(new LoginModWith2FAResponse(token));
         } else {
-            return tkn;
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body("Código inválido");
         }
     }
 
