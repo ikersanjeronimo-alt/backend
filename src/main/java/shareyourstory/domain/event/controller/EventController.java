@@ -1,0 +1,65 @@
+package shareyourstory.domain.event.controller;
+
+import org.springframework.web.bind.annotation.RestController;
+import shareyourstory.domain.event.model.Event;
+import shareyourstory.domain.event.service.EventService;
+import shareyourstory.websocket.service.WebSocketService;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+
+@RestController
+public class EventController {
+
+    @Autowired
+    EventService eventService;
+
+    @Autowired
+    WebSocketService webSocketService;
+
+    @GetMapping("/api/events")
+    public List<Event> getEvents() {
+        return eventService.getAllEvents();
+    }
+    
+    @PostMapping("/api/events")
+    public ResponseEntity<Event> createEvent(@RequestBody Event event) {
+        Event createdEvent = eventService.createEvent(event);
+        webSocketService.broadcastEventChange("CREATE", createdEvent);
+        return ResponseEntity.ok(createdEvent);
+    }
+
+    @PostMapping("/api/events/{id}/interest")
+    public ResponseEntity<Void> like(@PathVariable Integer id) {
+        eventService.toggleInterest(id);
+        return ResponseEntity.ok().build();
+    }
+    
+
+    @PutMapping("/api/events/{id}")
+    public ResponseEntity<Event> updateEvent(@PathVariable Integer id, @RequestBody Event event) {
+        Event updatedEvent = eventService.updateEvent(id, event);
+        if (updatedEvent != null) {
+            webSocketService.broadcastEventChange("UPDATE", updatedEvent);
+            return ResponseEntity.ok(updatedEvent);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/api/events/{id}")
+    public ResponseEntity<Void> deleteEvent(@PathVariable Integer id) {
+        Event event = eventService.getEventById(id);
+        if (event != null) {
+            eventService.deleteEvent(id);
+            webSocketService.broadcastEventChange("DELETE", event);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+}

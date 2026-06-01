@@ -25,7 +25,7 @@ public class SchedulteTask {
 
         List<TimeMachine> timeMachineList = timeMachineRepository.findAll();
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yy");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         String todayDate = dateFormat.format(new Date());
 
         for (TimeMachine timeMachine : timeMachineList) {

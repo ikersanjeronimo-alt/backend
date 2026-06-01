@@ -22,7 +22,7 @@ public class TimeMachineService {
         newTimeMachine.setMessage(newTimeMachineData.message());
         newTimeMachine.setEmail(newTimeMachineData.email());
 
-        SimpleDateFormat format = new SimpleDateFormat("dd-MM-yy");
+        SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
 
         try {
             newTimeMachine.setDeliveryDate(format.parse(newTimeMachineData.deliveryDate()));

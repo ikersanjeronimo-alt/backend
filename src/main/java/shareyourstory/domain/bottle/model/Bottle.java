@@ -1,24 +1,21 @@
-package shareyourstory.domain.storyMap.model;
+package shareyourstory.domain.bottle.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
-@Table(name = "storyMaps")
-public class StoryMap {
+@Table(name = "bottles")
+public class Bottle {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
+    @NotBlank
     private String message;
-    private double latitude;
-    private double longitude;
-
-    public StoryMap() {}
 
     public Integer getId() {
         return id;
@@ -34,21 +31,5 @@ public class StoryMap {
 
     public void setMessage(String message) {
         this.message = message;
-    }
-
-    public double getLatitude() {
-        return latitude;
-    }
-
-    public double getLongitude() {
-        return longitude;
-    }
-
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
-
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
     }
 }

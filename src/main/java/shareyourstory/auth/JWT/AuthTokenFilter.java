@@ -31,8 +31,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
         try {
             if (jwt != null && jwtService.validateJwtToken(jwt)) {
-                String email = jwtService.getEmailFromToken(jwt);
-                UserDetails userDetails = userService.loadUserByUsername(email);
+                String username = jwtService.getUsernameFromToken(jwt);
+                UserDetails userDetails = userService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authenticationToken =
                         new UsernamePasswordAuthenticationToken(userDetails, null,
                                 userDetails.getAuthorities());
@@ -58,8 +58,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-
-        return path.startsWith("/api/auth/register") || path.startsWith("/api/auth/login") || path.startsWith("/api/auth/register/mod");
+        return false;
     }
 }

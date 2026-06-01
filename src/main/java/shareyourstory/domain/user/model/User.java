@@ -1,45 +1,93 @@
 package shareyourstory.domain.user.model;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.time.LocalDate;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-// import lombok.Getter;
-// import lombok.Setter;
 
 @Entity
 @Table(name = "users")
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @Column(name = "`userId`")
+    private Integer userId;
 
+    @Column(name = "name", length = 255)
     private String name;
+
+    @Column(name = "`lastName`", length = 255)
     private String lastName;
-    private String username;
-    private String password;
-    @Column(unique = true)
-    private String email;
-    private String company;
-    // @Enumerated(EnumType.STRING)
-    // private Roles role;
-    @Column(unique = true)
+
+    @Column(name = "`userName`", nullable = false, unique = true, length = 255)
+    private String userName;
+
+    @Column(name = "`nickName`", nullable = false, unique = true, length = 255)
+    private String nickName;
+
+    @Column(name = "`userPassword`", nullable = false, length = 255)
+    private String userPassword;
+
+    @Column(name = "`companyName`", length = 255)
+    private String companyName;
+
+    @Column(name = "mail", unique = true, length = 255)
+    private String mail;
+
+    @Column(name = "`creationDate`", nullable = false)
+    private LocalDate creationDate;
+
+    @Column(name = "profession", length = 255)
+    private String profession;
+
+    @Column(name = "specialization", length = 255)
+    private String specialization;
+
+    @ManyToOne
+    @JoinColumn(name = "professionId")
+    private Profession professionRef;
+
+    @ManyToOne
+    @JoinColumn(name = "specializationId")
+    private Specialization specializationRef;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false, length = 32)
+    private UserRole role = UserRole.ANON;
+
+    @Column(name = "`secretKey`", unique = true)
     private String secretKey;
 
+    @Column(name = "`twoFactorEnabled`", nullable = false)
     private boolean twoFactorEnabled = false;
 
-    // @ManyToOne
-    // private ProfessionType professionType;
-    // @ManyToOne
-    // private SpecializationType specializationType;
-
     public User() {}
+
+    @PrePersist
+    public void prePersist() {
+        if (creationDate == null) {
+            creationDate = LocalDate.now();
+        }
+        if (role == null) {
+            role = UserRole.ANON;
+        }
+        if (nickName == null) {
+            nickName = userName;
+        }
+    }
 
     public String getName() {
         return name;
@@ -57,57 +105,145 @@ public class User implements UserDetails {
         this.lastName = lastName;
     }
 
+    public Integer getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
     public Integer getId() {
-        return id;
+        return userId;
     }
 
     public void setId(Integer id) {
-        this.id = id;
+        this.userId = id;
     }
 
     public String getUsername() {
-        return username;
+        return userName;
     }
 
     public void setUsername(String username) {
-        this.username = username;
+        this.userName = username;
     }
 
     public String getPassword() {
-        return password;
+        return userPassword;
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        this.userPassword = password;
     }
 
     public String getEmail() {
-        return email;
+        return mail;
     }
 
     public void setEmail(String email) {
-        this.email = email;
+        this.mail = email;
     }
 
     public String getCompany() {
-        return company;
+        return companyName;
     }
 
     public void setCompany(String company) {
-        this.company = company;
+        this.companyName = company;
     }
 
-    // public Roles getRole() {
-    // return role;
-    // }
+    public String getUserName() {
+        return userName;
+    }
 
-    // public void setRole(Roles role) {
-    // this.role = role;
-    // }
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
+    }
+
+    public String getUserPassword() {
+        return userPassword;
+    }
+
+    public void setUserPassword(String userPassword) {
+        this.userPassword = userPassword;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public String getMail() {
+        return mail;
+    }
+
+    public void setMail(String mail) {
+        this.mail = mail;
+    }
+
+    public LocalDate getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(LocalDate creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public String getProfession() {
+        return profession;
+    }
+
+    public void setProfession(String profession) {
+        this.profession = profession;
+    }
+
+    public String getSpecialization() {
+        return specialization;
+    }
+
+    public void setSpecialization(String specialization) {
+        this.specialization = specialization;
+    }
+
+    public Profession getProfessionRef() {
+        return professionRef;
+    }
+
+    public void setProfessionRef(Profession professionRef) {
+        this.professionRef = professionRef;
+    }
+
+    public Specialization getSpecializationRef() {
+        return specializationRef;
+    }
+
+    public void setSpecializationRef(Specialization specializationRef) {
+        this.specializationRef = specializationRef;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return new ArrayList<>();
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     public String getSecretKey() {

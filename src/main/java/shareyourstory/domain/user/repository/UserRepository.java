@@ -8,5 +8,11 @@ import shareyourstory.domain.user.model.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
 
-    public Optional<User> findByEmail(String email);
+    public Optional<User> findByMail(String mail);
+
+    public Optional<User> findByUserName(String userName);
+
+    public Optional<User> findByMailOrUserName(String mail, String userName);
+
+    public boolean existsByRole(shareyourstory.domain.user.model.UserRole role);
 }

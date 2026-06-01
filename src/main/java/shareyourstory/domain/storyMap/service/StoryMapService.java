@@ -17,7 +17,7 @@ public class StoryMapService {
 
     @Autowired
     WebSocketService webSocketService;
-    
+
     public List<StoryMap> getAllStoryMaps() {
         return storyMapRepository.findAll();
     }
@@ -28,6 +28,10 @@ public class StoryMapService {
         newStoryMap.setMessage(newStoryMapRequest.text());
         newStoryMap.setLatitude(newStoryMapRequest.lat());
         newStoryMap.setLongitude(newStoryMapRequest.lng());
+
+        System.out.println(newStoryMap.getMessage());
+        System.out.println(newStoryMap.getLatitude());
+        System.out.println(newStoryMap.getLongitude());
 
         try {
             storyMapRepository.save(newStoryMap);

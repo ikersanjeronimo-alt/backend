@@ -8,5 +8,6 @@ public record RegisterModRequest(@NotBlank(message = "Name is mandatory") String
         @NotBlank(message = "Lastname is mandatory") String lastName,
         @NotBlank(message = "Username is mandatory") String username,
         @NotBlank(message = "Password is mandataory") @Size(min = 8) String password,
-        @Email @NotBlank(message = "Email is mandatory") String email, String company) {
+        @Email @NotBlank(message = "Email is mandatory") String email, String role, String company,
+        String profession, String specialization) {
 }
