@@ -1,0 +1,48 @@
+# =============================================================================
+# Replicación MySQL source -> replica (Paso 7)
+# Compose AUTÓNOMO (independiente de .devcontainer/compose.yml).
+#   docker compose -f db/07-replicacion/docker-compose.yml up -d
+# =============================================================================
+name: syss-replicacion
+
+services:
+  mysql-primary:
+    image: mysql:lts
+    container_name: syss-mysql-primary
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --log-bin-trust-function-creators=1
+    environment:
+      MYSQL_ROOT_PASSWORD: pasahitza
+      MYSQL_DATABASE: shareYourStory
+    ports:
+      - "3306:3306"
+    volumes:
+      - primary-data:/var/lib/mysql
+
+  mysql-replica:
+    image: mysql:lts
+    container_name: syss-mysql-replica
+    command:
+      - --server-id=2
+      - --relay-log=relay-bin
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
+      - --read-only=1
+      - --log-bin-trust-function-creators=1
+    environment:
+      MYSQL_ROOT_PASSWORD: pasahitza
+    ports:
+      - "3307:3306"
+    depends_on:
+      - mysql-primary
+    volumes:
+      - replica-data:/var/lib/mysql
+
+volumes:
+  primary-data:
+  replica-data:
