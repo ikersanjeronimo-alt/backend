@@ -72,6 +72,12 @@ public class ModerationController {
         }
     }
 
+    /** Historial de auditoría de un reporte (generado por el trigger). Solo ADMINISTRATOR. */
+    @GetMapping("/reports/{id}/audit")
+    public ResponseEntity<?> audit(@PathVariable Integer id) {
+        return ResponseEntity.ok(moderationService.auditFor(id));
+    }
+
     private String rootMessage(Throwable e) {
         Throwable cur = e;
         while (cur.getCause() != null) {

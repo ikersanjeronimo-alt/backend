@@ -5,7 +5,9 @@ import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shareyourstory.domain.moderation.model.Report;
+import shareyourstory.domain.moderation.model.ReportAudit;
 import shareyourstory.domain.moderation.model.ReportStatus;
+import shareyourstory.domain.moderation.repository.ReportAuditRepository;
 import shareyourstory.domain.moderation.repository.ReportRepository;
 import shareyourstory.domain.storyMap.model.StoryMap;
 import shareyourstory.domain.storyMap.repository.StoryMapRepository;
@@ -15,11 +17,19 @@ public class ModerationService {
 
     private final ReportRepository reportRepository;
     private final StoryMapRepository storyMapRepository;
+    private final ReportAuditRepository reportAuditRepository;
 
     public ModerationService(ReportRepository reportRepository,
-            StoryMapRepository storyMapRepository) {
+            StoryMapRepository storyMapRepository,
+            ReportAuditRepository reportAuditRepository) {
         this.reportRepository = reportRepository;
         this.storyMapRepository = storyMapRepository;
+        this.reportAuditRepository = reportAuditRepository;
+    }
+
+    /** Historial de auditoría de un reporte (lo genera el trigger trg_reports_audit). */
+    public List<ReportAudit> auditFor(Integer reportId) {
+        return reportAuditRepository.findByReportIdOrderByCreatedAtDesc(reportId);
     }
 
     /** Crea un reporte sobre una historia existente. */
