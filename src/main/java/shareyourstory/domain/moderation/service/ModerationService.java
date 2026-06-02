@@ -3,6 +3,7 @@ package shareyourstory.domain.moderation.service;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import shareyourstory.domain.moderation.model.Report;
 import shareyourstory.domain.moderation.model.ReportStatus;
 import shareyourstory.domain.moderation.repository.ReportRepository;
@@ -43,11 +44,34 @@ public class ModerationService {
         return reportRepository.countPendingReportsViaFunction();
     }
 
+    private static final String REDACTED_MESSAGE = "[eliminado por moderación]";
+
     /**
-     * Resuelve un reporte llamando al procedimiento almacenado sp_resolve_report.
-     * (En el Paso 5 se envuelve en una transacción que además sanea la historia.)
+     * Resuelve un reporte de forma ATÓMICA (transacción que abarca dos tablas):
+     *   1) tabla `reports`   -> vía el procedimiento almacenado sp_resolve_report
+     *   2) tabla `storyMaps` -> si la acción es RESOLVED, se sanea el mensaje de
+     *      la historia infractora.
+     *
+     * Argumento del uso de @Transactional: ambos cambios deben confirmarse o
+     * descartarse JUNTOS. Si el saneado de la historia falla (paso 2), no puede
+     * quedar un reporte marcado como RESUELTO sobre una historia que sigue
+     * mostrando contenido inapropiado (paso 1). Spring revierte automáticamente
+     * toda la transacción ante cualquier RuntimeException, incluido el error
+     * (SIGNAL) que el propio procedimiento lanza si el reporte no es válido.
      */
+    @Transactional
     public void resolveReport(Integer reportId, Integer moderatorId, String action) {
+        // 1) Procedimiento almacenado: actualiza la tabla `reports`.
         reportRepository.resolveReport(reportId, moderatorId, action);
+
+        // 2) Solo si se confirma la infracción, se sanea la historia (otra tabla).
+        if ("RESOLVED".equalsIgnoreCase(action)) {
+            Report report = reportRepository.findById(reportId)
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "El reporte " + reportId + " no existe"));
+            StoryMap story = report.getStory();
+            story.setMessage(REDACTED_MESSAGE);
+            storyMapRepository.save(story);
+        }
     }
 }
