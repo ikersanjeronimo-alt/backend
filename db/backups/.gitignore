@@ -1,0 +1,4 @@
+# No versionar los volcados de la BD (pueden contener datos sensibles).
+# Se mantiene la carpeta en el repositorio pero se ignora su contenido.
+*
+!.gitignore
