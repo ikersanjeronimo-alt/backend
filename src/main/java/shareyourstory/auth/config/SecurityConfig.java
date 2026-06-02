@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register/mod/**").hasRole("ADMINISTRATOR")
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/interest").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/events/*/interest").authenticated()
                         .requestMatchers("/api/testJWT", "/api/users/me/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/events")
                         .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
@@ -73,7 +75,7 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
 
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         configuration.setAllowedHeaders(List.of("*"));
 

@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "events")
@@ -19,6 +20,8 @@ public class Event {
     private String description;
     private String topic;
     private int reaction;
+    @Transient
+    private boolean interested;
 
     // private User userId;
     public Integer getId() {
@@ -69,6 +72,14 @@ public class Event {
 
     public void setReaction(int reaction) {
         this.reaction = reaction;
+    }
+
+    public boolean isInterested() {
+        return interested;
+    }
+
+    public void setInterested(boolean interested) {
+        this.interested = interested;
     }
 
     public String getDate() {

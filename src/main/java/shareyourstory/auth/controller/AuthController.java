@@ -25,6 +25,7 @@ import shareyourstory.auth.dto.UpdateUsernameRequest;
 import shareyourstory.auth.dto.ValidateQRRequest;
 import shareyourstory.auth.service.AuthService;
 import shareyourstory.auth.service.GoogleAuthService;
+import shareyourstory.domain.community.service.CommunityService;
 import shareyourstory.domain.user.model.User;
 import shareyourstory.domain.user.repository.UserRepository;
 import shareyourstory.domain.user.service.UserService;
@@ -45,6 +46,9 @@ public class AuthController {
 
     @Autowired
     JWTService jwtService;
+
+    @Autowired
+    CommunityService communityService;
 
     @PostMapping("/api/auth/anonymous")
     public AuthResponse anonymous(@RequestBody(required = false) AnonymousRequest anonymousRequest) {
@@ -132,7 +136,7 @@ public class AuthController {
     }
 
     @PatchMapping("/api/users/me/username")
-    public ResponseEntity<Void> updateUsername(@AuthenticationPrincipal User user,
+    public ResponseEntity<AuthResponse> updateUsername(@AuthenticationPrincipal User user,
             @RequestBody UpdateUsernameRequest request) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -140,8 +144,9 @@ public class AuthController {
 
         user.setUsername(request.username());
         user.setNickName(request.username());
-        userRepository.save(user);
-        return ResponseEntity.noContent().build();
+        User saved = userRepository.save(user);
+        communityService.syncModeratorDisplayName(saved.getUserId());
+        return ResponseEntity.ok(authService.toAuthResponse(saved));
     }
 
     @GetMapping("/api/testJWT")

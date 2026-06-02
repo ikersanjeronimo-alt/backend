@@ -2,15 +2,26 @@ package shareyourstory.websocket.service;
 
 public class CommunityMessageDTO {
     private String id;
+    private String userId;
     private String username;
     private String text;
     private String time;
     private boolean own;
+    private String action;
 
     public CommunityMessageDTO() {}
 
     public CommunityMessageDTO(String id, String username, String text, String time, boolean own) {
         this.id = id;
+        this.username = username;
+        this.text = text;
+        this.time = time;
+        this.own = own;
+    }
+
+    public CommunityMessageDTO(String id, String userId, String username, String text, String time, boolean own) {
+        this.id = id;
+        this.userId = userId;
         this.username = username;
         this.text = text;
         this.time = time;
@@ -23,6 +34,14 @@ public class CommunityMessageDTO {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getUsername() {
@@ -55,5 +74,13 @@ public class CommunityMessageDTO {
 
     public void setOwn(boolean own) {
         this.own = own;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 }

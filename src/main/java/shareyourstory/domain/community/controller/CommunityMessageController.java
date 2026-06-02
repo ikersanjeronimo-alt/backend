@@ -1,8 +1,8 @@
 package shareyourstory.domain.community.controller;
 
-import shareyourstory.domain.community.model.CommunityMessage;
 import shareyourstory.domain.community.service.CommunityMessageService;
 import shareyourstory.domain.user.model.User;
+import shareyourstory.websocket.service.CommunityMessageDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,8 +20,10 @@ public class CommunityMessageController {
      * Get all messages for a community
      */
     @GetMapping("/{communityId}/messages")
-    public ResponseEntity<List<CommunityMessage>> getMessages(@PathVariable Integer communityId) {
-        List<CommunityMessage> messages = communityMessageService.getMessagesByCommunity(communityId);
+    public ResponseEntity<List<CommunityMessageDTO>> getMessages(
+            @PathVariable Integer communityId,
+            @AuthenticationPrincipal User user) {
+        List<CommunityMessageDTO> messages = communityMessageService.getMessagesByCommunity(communityId, user);
         return ResponseEntity.ok(messages);
     }
 
@@ -29,7 +31,7 @@ public class CommunityMessageController {
      * Send a message to a community
      */
     @PostMapping("/{communityId}/messages")
-    public ResponseEntity<CommunityMessage> sendMessage(
+    public ResponseEntity<CommunityMessageDTO> sendMessage(
             @PathVariable Integer communityId,
             @AuthenticationPrincipal User user,
             @RequestBody CommunityMessagePayload payload) {
@@ -42,11 +44,7 @@ public class CommunityMessageController {
             return ResponseEntity.badRequest().build();
         }
 
-        CommunityMessage message = communityMessageService.saveMessage(
-                communityId,
-                user.getUserId(),
-                user.getUsername(),
-                text);
+        CommunityMessageDTO message = communityMessageService.saveMessage(communityId, user, text);
         return ResponseEntity.ok(message);
     }
 

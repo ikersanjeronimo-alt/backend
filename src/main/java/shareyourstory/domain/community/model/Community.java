@@ -2,10 +2,15 @@ package shareyourstory.domain.community.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
 import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
 @Entity
 @Table(name = "communities")
@@ -18,13 +23,21 @@ public class Community {
     private String emoji;
     @Column(name = "moderator")
     private String mod;
+    @Column(name = "moderator_user_id")
+    private Integer modUserId;
     @Column(name = "description")
     private String desc;
     private int members;
     private int online;
     private String pinnedNote;
+    private boolean chatClosed;
     private CommunityTypes category;
+    @Transient
     private boolean joined;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "community", fetch = FetchType.LAZY)
+    private List<JoinedCommunity> joinedCommunities;
 
     public Long getId() {
         return id;
@@ -56,6 +69,14 @@ public class Community {
 
     public void setMod(String mod) {
         this.mod = mod;
+    }
+
+    public Integer getModUserId() {
+        return modUserId;
+    }
+
+    public void setModUserId(Integer modUserId) {
+        this.modUserId = modUserId;
     }
 
     public String getDesc() {
@@ -90,6 +111,14 @@ public class Community {
         this.pinnedNote = pinnedNote;
     }
 
+    public boolean isChatClosed() {
+        return chatClosed;
+    }
+
+    public void setChatClosed(boolean chatClosed) {
+        this.chatClosed = chatClosed;
+    }
+
     public CommunityTypes getCategory() {
         return category;
     }
@@ -104,5 +133,13 @@ public class Community {
 
     public void setJoined(boolean joined) {
         this.joined = joined;
+    }
+
+    public List<JoinedCommunity> getJoinedCommunities() {
+        return joinedCommunities;
+    }
+
+    public void setJoinedCommunities(List<JoinedCommunity> joinedCommunities) {
+        this.joinedCommunities = joinedCommunities;
     }
 }

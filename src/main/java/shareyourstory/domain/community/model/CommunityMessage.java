@@ -20,6 +20,7 @@ public class CommunityMessage {
     private String username;
     private String text;
     private LocalDateTime createdAt;
+    private String action;
 
     public CommunityMessage() {}
 
@@ -77,5 +78,13 @@ public class CommunityMessage {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 }

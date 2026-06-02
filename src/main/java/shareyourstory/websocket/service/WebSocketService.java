@@ -31,6 +31,14 @@ public class WebSocketService {
         simpMessagingTemplate.convertAndSend("/topic/privateChats/" + professionalId, message);
     }
 
+    public void broadcastPrivateMessage(String professionalId, String userId, PrivateMessageDTO message) {
+        simpMessagingTemplate.convertAndSend("/topic/privateChats/" + professionalId + "/users/" + userId, message);
+    }
+
+    public void broadcastPrivateInboxUpdate(String professionalId, PrivateConversationDTO conversation) {
+        simpMessagingTemplate.convertAndSend("/topic/privateChats/professionals/" + professionalId, conversation);
+    }
+
     /**
      * Broadcast community message to all members of a community
      */
