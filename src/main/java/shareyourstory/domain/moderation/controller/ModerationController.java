@@ -31,6 +31,16 @@ public class ModerationController {
     /** Cualquier usuario autenticado puede reportar una historia. */
     @PostMapping("/reports")
     public ResponseEntity<?> createReport(@RequestBody CreateReportRequest request) {
+        if (request.storyId() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "storyId es obligatorio"));
+        }
+        if (request.reason() == null || request.reason().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "reason es obligatorio"));
+        }
+        if (request.reason().length() > 500) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "reason supera el maximo de 500 caracteres"));
+        }
         try {
             ReportResponse body =
                     ReportResponse.from(moderationService.createReport(

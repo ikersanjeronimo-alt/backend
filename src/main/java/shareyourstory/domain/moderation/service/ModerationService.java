@@ -44,9 +44,9 @@ public class ModerationService {
         return reportRepository.save(report);
     }
 
-    /** Lista los reportes pendientes. */
+    /** Lista los reportes pendientes (con story y moderator ya cargados: sin N+1). */
     public List<Report> pendingReports() {
-        return reportRepository.findByStatus(ReportStatus.PENDING);
+        return reportRepository.findByStatusWithRelations(ReportStatus.PENDING);
     }
 
     /** Número de reportes pendientes (vía función almacenada). */
@@ -75,13 +75,17 @@ public class ModerationService {
         reportRepository.resolveReport(reportId, moderatorId, action);
 
         // 2) Solo si se confirma la infracción, se sanea la historia (otra tabla).
-        if ("RESOLVED".equalsIgnoreCase(action)) {
+        //    Se normaliza igual que sp_resolve_report (TRIM + case-insensitive)
+        //    para que la decisión de saneado coincida con el estado que persiste
+        //    el procedimiento (p. ej. " resolved " -> el SP guarda RESOLVED).
+        if (action != null && "RESOLVED".equalsIgnoreCase(action.trim())) {
             Report report = reportRepository.findById(reportId)
                     .orElseThrow(() -> new NoSuchElementException(
                             "El reporte " + reportId + " no existe"));
             StoryMap story = report.getStory();
+            // `story` esta gestionada dentro de esta transaccion: el cambio se
+            // persiste por dirty-checking al hacer flush; no hace falta save().
             story.setMessage(REDACTED_MESSAGE);
-            storyMapRepository.save(story);
         }
     }
 }

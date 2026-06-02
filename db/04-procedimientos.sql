@@ -22,29 +22,32 @@ CREATE PROCEDURE sp_resolve_report(
     IN p_action       VARCHAR(20)
 )
 BEGIN
-    DECLARE v_pending INT DEFAULT 0;
+    -- Normaliza la accion: la comparacion de cadenas en MySQL es case-insensitive
+    -- (utf8mb4_..._ci), por lo que 'resolved' pasaria la validacion pero se
+    -- guardaria en minusculas y romperia el mapeo @Enumerated(STRING) al releer la
+    -- fila. Forzamos MAYUSCULAS; ademas detectamos NULL, que de otro modo evitaria
+    -- el NOT IN (NULL NOT IN (...) = NULL, no TRUE).
+    SET p_action = UPPER(TRIM(p_action));
 
-    -- La acción debe ser válida
-    IF p_action NOT IN ('RESOLVED', 'DISMISSED') THEN
+    IF p_action IS NULL OR p_action NOT IN ('RESOLVED', 'DISMISSED') THEN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'Accion no valida: usar RESOLVED o DISMISSED';
     END IF;
 
-    -- El reporte debe existir y estar PENDING
-    SELECT COUNT(*) INTO v_pending
-      FROM reports
-     WHERE id = p_report_id AND status = 'PENDING';
-
-    IF v_pending = 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'El reporte no existe o no esta PENDING';
-    END IF;
-
+    -- Comprobar-y-actuar en UNA sentencia: el guard status = 'PENDING' dentro del
+    -- propio UPDATE evita la condicion de carrera de dos moderadores resolviendo
+    -- el mismo reporte a la vez (un SELECT COUNT previo no la evitaba).
     UPDATE reports
        SET status      = p_action,
            resolved_by = p_moderator_id,
            resolved_at = NOW()
-     WHERE id = p_report_id;
+     WHERE id = p_report_id AND status = 'PENDING';
+
+    -- 0 filas afectadas => el reporte no existe o ya no estaba PENDING.
+    IF ROW_COUNT() = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'El reporte no existe o no esta PENDING';
+    END IF;
 END $$
 
 -- -----------------------------------------------------------------------------
