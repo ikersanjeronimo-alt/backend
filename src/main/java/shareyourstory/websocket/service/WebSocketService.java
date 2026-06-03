@@ -25,10 +25,12 @@ public class WebSocketService {
     }
 
     /**
-     * Broadcast private message to a specific professional chat
+     * Envia un mensaje privado a la cola PERSONAL de un usuario (por su username,
+     * que es el Principal autenticado en el CONNECT). Spring lo entrega solo a las
+     * sesiones de ese usuario en /user/queue/private; nadie mas lo recibe.
      */
-    public void broadcastPrivateMessage(String professionalId, PrivateMessageDTO message) {
-        simpMessagingTemplate.convertAndSend("/topic/privateChats/" + professionalId, message);
+    public void sendPrivateMessageToUser(String username, PrivateMessageDTO message) {
+        simpMessagingTemplate.convertAndSendToUser(username, "/queue/private", message);
     }
 
     /**

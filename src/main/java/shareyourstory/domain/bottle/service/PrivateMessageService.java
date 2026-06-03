@@ -73,11 +73,17 @@ public class PrivateMessageService {
             String.valueOf(savedMessage.getId()),
             from,
             text,
-            formatTime(savedMessage.getCreatedAt())
+            formatTime(savedMessage.getCreatedAt()),
+            String.valueOf(userId),
+            String.valueOf(professionalId)
         );
 
-        webSocketService.broadcastPrivateMessage(String.valueOf(professionalId), dto);
-        webSocketService.broadcastPrivateMessage(String.valueOf(userId), dto);
+        // Entrega a la cola PERSONAL de cada participante (por su username). Nadie
+        // mas recibe el mensaje: cierra la fuga del topic compartido por profesional.
+        userRepository.findById(userId).ifPresent(u ->
+            webSocketService.sendPrivateMessageToUser(u.getUsername(), dto));
+        userRepository.findById(professionalId).ifPresent(p ->
+            webSocketService.sendPrivateMessageToUser(p.getUsername(), dto));
 
         return savedMessage;
     }
