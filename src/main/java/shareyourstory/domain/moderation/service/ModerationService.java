@@ -2,90 +2,168 @@ package shareyourstory.domain.moderation.service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import shareyourstory.domain.community.model.Community;
+import shareyourstory.domain.community.model.CommunityMessage;
+import shareyourstory.domain.community.repository.CommunityMessageRepository;
+import shareyourstory.domain.community.repository.CommunityRepository;
+import shareyourstory.domain.moderation.dto.ModerationMemberResponse;
 import shareyourstory.domain.moderation.model.Report;
 import shareyourstory.domain.moderation.model.ReportAudit;
 import shareyourstory.domain.moderation.model.ReportStatus;
+import shareyourstory.domain.moderation.model.ReportTargetType;
 import shareyourstory.domain.moderation.repository.ReportAuditRepository;
 import shareyourstory.domain.moderation.repository.ReportRepository;
 import shareyourstory.domain.storyMap.model.StoryMap;
 import shareyourstory.domain.storyMap.repository.StoryMapRepository;
+import shareyourstory.domain.user.model.User;
+import shareyourstory.domain.user.model.UserRole;
+import shareyourstory.domain.user.repository.UserRepository;
 
 @Service
 public class ModerationService {
 
-    private final ReportRepository reportRepository;
-    private final StoryMapRepository storyMapRepository;
-    private final ReportAuditRepository reportAuditRepository;
+    @Autowired
+    ReportRepository reportRepository;
+    @Autowired
+    StoryMapRepository storyMapRepository;
+    @Autowired
+    ReportAuditRepository reportAuditRepository;
+    @Autowired
+    CommunityMessageRepository communityMessageRepository;
+    @Autowired
+    CommunityRepository communityRepository;
+    @Autowired
+    UserRepository userRepository;
 
-    public ModerationService(ReportRepository reportRepository,
-            StoryMapRepository storyMapRepository,
-            ReportAuditRepository reportAuditRepository) {
-        this.reportRepository = reportRepository;
-        this.storyMapRepository = storyMapRepository;
-        this.reportAuditRepository = reportAuditRepository;
-    }
+    private static final String REDACTED_MESSAGE = "[eliminado por moderación]";
 
-    /** Historial de auditoría de un reporte (lo genera el trigger trg_reports_audit). */
     public List<ReportAudit> auditFor(Integer reportId) {
         return reportAuditRepository.findByReportIdOrderByCreatedAtDesc(reportId);
     }
 
-    /** Crea un reporte sobre una historia existente. */
-    public Report createReport(Integer storyId, String reason) {
-        StoryMap story = storyMapRepository.findById(storyId)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "La historia " + storyId + " no existe"));
+    /** Crea un reporte sobre una historia (storyId) o un mensaje (messageId). */
+    public Report createReport(Integer storyId, Long messageId, String reason, User reporter) {
         Report report = new Report();
-        report.setStory(story);
         report.setReason(reason);
         report.setStatus(ReportStatus.PENDING);
+        if (reporter != null) {
+            report.setReporterId(reporter.getUserId());
+            report.setReporterUsername(reporter.getUsername());
+        }
+
+        if (storyId != null) {
+            StoryMap story = storyMapRepository.findById(storyId)
+                    .orElseThrow(() -> new NoSuchElementException("La historia " + storyId + " no existe"));
+            report.setTargetType(ReportTargetType.STORY);
+            report.setStory(story);
+            report.setContent(story.getMessage());
+            report.setReportedUsername("anonimo");
+            report.setCommunity("Mapa");
+        } else if (messageId != null) {
+            CommunityMessage msg = communityMessageRepository.findById(messageId)
+                    .orElseThrow(() -> new NoSuchElementException("El mensaje " + messageId + " no existe"));
+            report.setTargetType(ReportTargetType.MESSAGE);
+            report.setMessageId(messageId);
+            report.setContent(msg.getText());
+            report.setReportedUsername(msg.getUsername());
+            Community c = communityRepository.findById(msg.getCommunityId().longValue()).orElse(null);
+            report.setCommunity(c != null ? c.getName() : null);
+        } else {
+            throw new IllegalArgumentException("Debe indicarse storyId o messageId");
+        }
+
         return reportRepository.save(report);
     }
 
-    /** Lista los reportes pendientes (con story y moderator ya cargados: sin N+1). */
+    public List<Report> allReports() {
+        return reportRepository.findAll();
+    }
+
     public List<Report> pendingReports() {
         return reportRepository.findByStatusWithRelations(ReportStatus.PENDING);
     }
 
-    /** Número de reportes pendientes (vía función almacenada). */
     public long pendingCount() {
         return reportRepository.countPendingReportsViaFunction();
     }
 
-    private static final String REDACTED_MESSAGE = "[eliminado por moderación]";
-
     /**
-     * Resuelve un reporte de forma ATÓMICA (transacción que abarca dos tablas):
-     *   1) tabla `reports`   -> vía el procedimiento almacenado sp_resolve_report
-     *   2) tabla `storyMaps` -> si la acción es RESOLVED, se sanea el mensaje de
-     *      la historia infractora.
-     *
-     * Argumento del uso de @Transactional: ambos cambios deben confirmarse o
-     * descartarse JUNTOS. Si el saneado de la historia falla (paso 2), no puede
-     * quedar un reporte marcado como RESUELTO sobre una historia que sigue
-     * mostrando contenido inapropiado (paso 1). Spring revierte automáticamente
-     * toda la transacción ante cualquier RuntimeException, incluido el error
-     * (SIGNAL) que el propio procedimiento lanza si el reporte no es válido.
+     * Resuelve un reporte de forma atomica. action: "resolve" | "warn" | "dismiss".
+     * resolve y warn marcan el reporte como RESOLVED (via el procedimiento
+     * almacenado) y sanean el contenido; warn ademas incrementa los avisos del
+     * autor. dismiss solo cambia el estado a DISMISSED.
      */
     @Transactional
     public void resolveReport(Integer reportId, Integer moderatorId, String action) {
-        // 1) Procedimiento almacenado: actualiza la tabla `reports`.
-        reportRepository.resolveReport(reportId, moderatorId, action);
+        String act = action == null ? "" : action.trim().toLowerCase();
+        String spAction = act.equals("dismiss") ? "DISMISSED" : "RESOLVED";
 
-        // 2) Solo si se confirma la infracción, se sanea la historia (otra tabla).
-        //    Se normaliza igual que sp_resolve_report (TRIM + case-insensitive)
-        //    para que la decisión de saneado coincida con el estado que persiste
-        //    el procedimiento (p. ej. " resolved " -> el SP guarda RESOLVED).
-        if (action != null && "RESOLVED".equalsIgnoreCase(action.trim())) {
-            Report report = reportRepository.findById(reportId)
-                    .orElseThrow(() -> new NoSuchElementException(
-                            "El reporte " + reportId + " no existe"));
-            StoryMap story = report.getStory();
-            // `story` esta gestionada dentro de esta transaccion: el cambio se
-            // persiste por dirty-checking al hacer flush; no hace falta save().
-            story.setMessage(REDACTED_MESSAGE);
+        // 1) Procedimiento almacenado: actualiza la tabla `reports`.
+        reportRepository.resolveReport(reportId, moderatorId, spAction);
+
+        if (!spAction.equals("RESOLVED")) {
+            return;
         }
+
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new NoSuchElementException("El reporte " + reportId + " no existe"));
+
+        // 2) Sanear el contenido infractor (historia o mensaje).
+        if (report.getTargetType() == ReportTargetType.STORY && report.getStory() != null) {
+            report.getStory().setMessage(REDACTED_MESSAGE);
+        } else if (report.getTargetType() == ReportTargetType.MESSAGE && report.getMessageId() != null) {
+            communityMessageRepository.findById(report.getMessageId()).ifPresent(m -> {
+                m.setText(REDACTED_MESSAGE);
+                communityMessageRepository.save(m);
+            });
+        }
+
+        // 3) "Avisar": incrementa el contador de avisos del autor reportado.
+        if (act.equals("warn") && report.getReportedUsername() != null) {
+            userRepository.findByUserName(report.getReportedUsername()).ifPresent(u -> {
+                u.setWarnings(u.getWarnings() + 1);
+                userRepository.save(u);
+            });
+        }
+    }
+
+    // ── Miembros ─────────────────────────────────────────────────────────────
+
+    public List<ModerationMemberResponse> members() {
+        return userRepository.findByRole(UserRole.USER).stream()
+                .map(this::toMember)
+                .toList();
+    }
+
+    public ModerationMemberResponse warnMember(Integer userId) {
+        User u = requireUser(userId);
+        u.setWarnings(u.getWarnings() + 1);
+        userRepository.save(u);
+        return toMember(u);
+    }
+
+    public ModerationMemberResponse banMember(Integer userId) {
+        User u = requireUser(userId);
+        u.setBanned(true);
+        userRepository.save(u);
+        return toMember(u);
+    }
+
+    private User requireUser(Integer userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("Usuario " + userId + " no encontrado"));
+    }
+
+    private ModerationMemberResponse toMember(User u) {
+        return new ModerationMemberResponse(
+                String.valueOf(u.getUserId()),
+                u.getUsername(),
+                "",
+                u.getCreationDate() == null ? "" : u.getCreationDate().toString(),
+                (int) reportRepository.countByReportedUsername(u.getUsername()),
+                u.isBanned());
     }
 }

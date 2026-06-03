@@ -16,10 +16,10 @@ import shareyourstory.domain.storyMap.model.StoryMap;
 import shareyourstory.domain.user.model.User;
 
 /**
- * Reporte de una historia ({@link StoryMap}) por contenido inapropiado.
- * Relaciones con integridad referencial:
- *  - N:1 con storyMaps (story_id, obligatoria)
- *  - N:1 con users     (resolved_by, el moderador que lo resuelve, opcional)
+ * Reporte de contenido inapropiado: una historia del mapa ({@link StoryMap}) o
+ * un mensaje de comunidad. Se guardan campos "snapshot" (content, autor, etc.)
+ * en el momento del reporte para poder mostrar la tarjeta sin recargar la
+ * entidad original (que podria ser saneada o borrada).
  */
 @Entity
 @Table(name = "reports")
@@ -29,6 +29,18 @@ public class Report {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_type", nullable = false, length = 20)
+    private ReportTargetType targetType = ReportTargetType.STORY;
+
+    // Objetivo del reporte (uno u otro segun targetType).
+    @ManyToOne
+    @JoinColumn(name = "story_id")
+    private StoryMap story;
+
+    @Column(name = "message_id")
+    private Long messageId;
+
     @Column(nullable = false, length = 500)
     private String reason;
 
@@ -36,15 +48,27 @@ public class Report {
     @Column(nullable = false, length = 20)
     private ReportStatus status = ReportStatus.PENDING;
 
+    // Snapshots para la vista del panel.
+    @Column(name = "content", length = 1000)
+    private String content;
+
+    @Column(name = "reported_username", length = 255)
+    private String reportedUsername;
+
+    @Column(name = "reporter_id")
+    private Integer reporterId;
+
+    @Column(name = "reporter_username", length = 255)
+    private String reporterUsername;
+
+    @Column(name = "community", length = 255)
+    private String community;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "story_id", nullable = false)
-    private StoryMap story;
 
     @ManyToOne
     @JoinColumn(name = "resolved_by")
@@ -60,6 +84,9 @@ public class Report {
         if (status == null) {
             status = ReportStatus.PENDING;
         }
+        if (targetType == null) {
+            targetType = ReportTargetType.STORY;
+        }
     }
 
     public Integer getId() {
@@ -68,6 +95,30 @@ public class Report {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public ReportTargetType getTargetType() {
+        return targetType;
+    }
+
+    public void setTargetType(ReportTargetType targetType) {
+        this.targetType = targetType;
+    }
+
+    public StoryMap getStory() {
+        return story;
+    }
+
+    public void setStory(StoryMap story) {
+        this.story = story;
+    }
+
+    public Long getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(Long messageId) {
+        this.messageId = messageId;
     }
 
     public String getReason() {
@@ -86,6 +137,46 @@ public class Report {
         this.status = status;
     }
 
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public String getReportedUsername() {
+        return reportedUsername;
+    }
+
+    public void setReportedUsername(String reportedUsername) {
+        this.reportedUsername = reportedUsername;
+    }
+
+    public Integer getReporterId() {
+        return reporterId;
+    }
+
+    public void setReporterId(Integer reporterId) {
+        this.reporterId = reporterId;
+    }
+
+    public String getReporterUsername() {
+        return reporterUsername;
+    }
+
+    public void setReporterUsername(String reporterUsername) {
+        this.reporterUsername = reporterUsername;
+    }
+
+    public String getCommunity() {
+        return community;
+    }
+
+    public void setCommunity(String community) {
+        this.community = community;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -100,14 +191,6 @@ public class Report {
 
     public void setResolvedAt(LocalDateTime resolvedAt) {
         this.resolvedAt = resolvedAt;
-    }
-
-    public StoryMap getStory() {
-        return story;
-    }
-
-    public void setStory(StoryMap story) {
-        this.story = story;
     }
 
     public User getModerator() {

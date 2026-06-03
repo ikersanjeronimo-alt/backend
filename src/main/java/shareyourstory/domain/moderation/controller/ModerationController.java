@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import shareyourstory.domain.moderation.dto.CreateReportRequest;
+import shareyourstory.domain.moderation.dto.ModerationMemberResponse;
 import shareyourstory.domain.moderation.dto.ReportResponse;
 import shareyourstory.domain.moderation.dto.ResolveReportRequest;
 import shareyourstory.domain.moderation.service.ModerationService;
@@ -28,30 +29,35 @@ public class ModerationController {
         this.moderationService = moderationService;
     }
 
-    /** Cualquier usuario autenticado puede reportar una historia. */
+    /** Cualquier usuario autenticado puede reportar una historia o un mensaje. */
     @PostMapping("/reports")
-    public ResponseEntity<?> createReport(@RequestBody CreateReportRequest request) {
-        if (request.storyId() == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "storyId es obligatorio"));
+    public ResponseEntity<?> createReport(@RequestBody CreateReportRequest request,
+            @AuthenticationPrincipal User reporter) {
+        if (request.storyId() == null && request.messageId() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "storyId o messageId es obligatorio"));
         }
         if (request.reason() == null || request.reason().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "reason es obligatorio"));
         }
         if (request.reason().length() > 500) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "reason supera el maximo de 500 caracteres"));
+            return ResponseEntity.badRequest().body(Map.of("error", "reason supera el maximo de 500 caracteres"));
         }
         try {
-            ReportResponse body =
-                    ReportResponse.from(moderationService.createReport(
-                            request.storyId(), request.reason()));
+            ReportResponse body = ReportResponse.from(moderationService.createReport(
+                    request.storyId(), request.messageId(), request.reason(), reporter));
             return ResponseEntity.status(HttpStatus.CREATED).body(body);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
         }
     }
 
-    /** Reportes pendientes + contador (vía función almacenada). Solo ADMINISTRATOR. */
+    /** Todos los reportes (el front filtra por estado). Solo MOD/ADMIN. */
+    @GetMapping("/reports")
+    public List<ReportResponse> all() {
+        return moderationService.allReports().stream().map(ReportResponse::from).toList();
+    }
+
+    /** Reportes pendientes + contador (via funcion almacenada). Solo MOD/ADMIN. */
     @GetMapping("/reports/pending")
     public ResponseEntity<?> pending() {
         List<ReportResponse> reports = moderationService.pendingReports().stream()
@@ -62,7 +68,7 @@ public class ModerationController {
                 "reports", reports));
     }
 
-    /** Resuelve un reporte (vía procedimiento almacenado). Solo ADMINISTRATOR. */
+    /** Resuelve un reporte: action = "resolve" | "warn" | "dismiss". Solo MOD/ADMIN. */
     @PostMapping("/reports/{id}/resolve")
     public ResponseEntity<?> resolve(@PathVariable Integer id,
             @RequestBody ResolveReportRequest request,
@@ -77,15 +83,30 @@ public class ModerationController {
                     "action", request.action(),
                     "pendingRemaining", moderationService.pendingCount()));
         } catch (Exception e) {
-            // El procedimiento lanza SIGNAL si el reporte no existe / no está PENDING
             return ResponseEntity.badRequest().body(Map.of("error", rootMessage(e)));
         }
     }
 
-    /** Historial de auditoría de un reporte (generado por el trigger). Solo ADMINISTRATOR. */
     @GetMapping("/reports/{id}/audit")
     public ResponseEntity<?> audit(@PathVariable Integer id) {
         return ResponseEntity.ok(moderationService.auditFor(id));
+    }
+
+    // ── Miembros ─────────────────────────────────────────────────────────────
+
+    @GetMapping("/members")
+    public List<ModerationMemberResponse> members() {
+        return moderationService.members();
+    }
+
+    @PostMapping("/members/{id}/warn")
+    public ModerationMemberResponse warn(@PathVariable Integer id) {
+        return moderationService.warnMember(id);
+    }
+
+    @PostMapping("/members/{id}/ban")
+    public ModerationMemberResponse ban(@PathVariable Integer id) {
+        return moderationService.banMember(id);
     }
 
     private String rootMessage(Throwable e) {

@@ -78,6 +78,13 @@ public class User implements UserDetails {
     @Column(name = "topics", length = 512)
     private String topics;
 
+    // Moderacion de miembros.
+    @Column(name = "warnings", nullable = false)
+    private int warnings = 0;
+
+    @Column(name = "banned", nullable = false)
+    private boolean banned = false;
+
     public User() {}
 
     @PrePersist
@@ -272,5 +279,21 @@ public class User implements UserDetails {
 
     public void setTopics(String topics) {
         this.topics = topics;
+    }
+
+    public int getWarnings() {
+        return warnings;
+    }
+
+    public void setWarnings(int warnings) {
+        this.warnings = warnings;
+    }
+
+    public boolean isBanned() {
+        return banned;
+    }
+
+    public void setBanned(boolean banned) {
+        this.banned = banned;
     }
 }

@@ -29,4 +29,6 @@ public interface ReportRepository
      */
     @Query(value = "SELECT fn_count_pending_reports()", nativeQuery = true)
     long countPendingReportsViaFunction();
+
+    long countByReportedUsername(String reportedUsername);
 }
