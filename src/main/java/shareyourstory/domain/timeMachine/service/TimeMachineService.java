@@ -2,7 +2,6 @@ package shareyourstory.domain.timeMachine.service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import shareyourstory.domain.timeMachine.DTO.TimeMachineDTO;
@@ -15,28 +14,30 @@ public class TimeMachineService {
     @Autowired
     TimeMachineRepository timeMachineRepository;
 
-    public int createTimeMachine(TimeMachineDTO newTimeMachineData) {
-
-        TimeMachine newTimeMachine = new TimeMachine();
-
-        newTimeMachine.setMessage(newTimeMachineData.message());
-        newTimeMachine.setEmail(newTimeMachineData.email());
-
-        SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
-
-        try {
-            newTimeMachine.setDeliveryDate(format.parse(newTimeMachineData.deliveryDate()));
-
-            timeMachineRepository.save(newTimeMachine);
-
-            return Response.SC_CREATED;
-
-        } catch (ParseException e) {
-            System.out.println("Error while trying to parse date format.");
-        } catch (Exception e) {
-            System.out.println("Error while creating new Time Machine");
+    /**
+     * Crea una carta programada. La fecha de entrega la elige el usuario (formato
+     * dd-MM-yyyy). Devuelve false si faltan datos o la fecha no es valida.
+     */
+    public boolean createTimeMachine(TimeMachineDTO data) {
+        if (data == null
+                || data.message() == null || data.message().isBlank()
+                || data.email() == null || data.email().isBlank()
+                || data.deliveryDate() == null || data.deliveryDate().isBlank()) {
+            return false;
         }
 
-        return Response.SC_CONFLICT;
+        SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+        format.setLenient(false);
+
+        try {
+            TimeMachine newTimeMachine = new TimeMachine();
+            newTimeMachine.setMessage(data.message());
+            newTimeMachine.setEmail(data.email());
+            newTimeMachine.setDeliveryDate(format.parse(data.deliveryDate()));
+            timeMachineRepository.save(newTimeMachine);
+            return true;
+        } catch (ParseException e) {
+            return false;
+        }
     }
 }
