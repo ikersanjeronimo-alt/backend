@@ -1,12 +1,13 @@
 package shareyourstory.domain.bottle.service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import shareyourstory.domain.bottle.DTO.BottleDTO;
+import shareyourstory.domain.bottle.DTO.FloatingBottleResponse;
 import shareyourstory.domain.bottle.model.Bottle;
 import shareyourstory.domain.bottle.repository.BottleRepository;
 
@@ -16,39 +17,41 @@ public class BottleService {
     @Autowired
     BottleRepository bottleRepository;
 
-    public int createBottle(BottleDTO bottleDTO) {
+    private static final DateTimeFormatter HHMM = DateTimeFormatter.ofPattern("HH:mm");
+    private final Random random = new Random();
+
+    public void createBottle(BottleDTO bottleDTO, Integer authorId) {
         Bottle newBottle = new Bottle();
         newBottle.setMessage(bottleDTO.message());
-
-        try {
-            bottleRepository.save(newBottle);
-            return Response.SC_CREATED;
-        } catch (Exception e) {
-            return Response.SC_CONFLICT;
-        }
+        newBottle.setAuthorId(authorId);
+        bottleRepository.save(newBottle);
     }
 
-    public Optional<BottleDTO> getRandomBottle() {
-        List<Bottle> bottlesList = bottleRepository.findAll();
+    /**
+     * Entrega una botella al azar entre las NO recibidas y que no sean del propio
+     * usuario; la marca como recibida para que no se reparta de nuevo. Vacio si no
+     * hay ninguna disponible.
+     */
+    public Optional<BottleDTO> receiveRandom(Integer userId) {
+        List<Bottle> candidates = bottleRepository.findByReceivedFalse().stream()
+                .filter(b -> userId == null || !userId.equals(b.getAuthorId()))
+                .toList();
 
-        if (bottlesList == null) {
-            return null;
-        } else {
-            Random rm = new Random();
-            Bottle randomBottle;
-            randomBottle = bottlesList.get(rm.nextInt(bottlesList.size()));
-
-            return Optional.ofNullable(new BottleDTO(randomBottle.getMessage()));
+        if (candidates.isEmpty()) {
+            return Optional.empty();
         }
+
+        Bottle chosen = candidates.get(random.nextInt(candidates.size()));
+        chosen.setReceived(true);
+        bottleRepository.save(chosen);
+        return Optional.of(new BottleDTO(chosen.getMessage()));
     }
 
-    public List<Bottle> getFloatingBottleList() {
-        List<Bottle> bottleList = bottleRepository.findAll();
-
-        if (bottleList.size() > 3) {
-            return bottleList.subList(0, 3);
-        }
-
-        return bottleList;
+    public List<FloatingBottleResponse> getFloatingBottleList() {
+        return bottleRepository.findTop3ByOrderByCreatedAtDesc().stream()
+                .map(b -> new FloatingBottleResponse(
+                        b.getMessage(),
+                        b.getCreatedAt() == null ? "" : b.getCreatedAt().format(HHMM)))
+                .toList();
     }
 }
