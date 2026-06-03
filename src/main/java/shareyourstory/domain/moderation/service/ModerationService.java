@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shareyourstory.domain.community.model.Community;
 import shareyourstory.domain.community.model.CommunityMessage;
+import shareyourstory.domain.bottle.model.PrivateMessage;
+import shareyourstory.domain.bottle.repository.PrivateMessageRepository;
 import shareyourstory.domain.community.repository.CommunityMessageRepository;
 import shareyourstory.domain.community.repository.CommunityRepository;
 import shareyourstory.domain.moderation.dto.ModerationMemberResponse;
@@ -36,6 +38,8 @@ public class ModerationService {
     @Autowired
     CommunityRepository communityRepository;
     @Autowired
+    PrivateMessageRepository privateMessageRepository;
+    @Autowired
     UserRepository userRepository;
 
     private static final String REDACTED_MESSAGE = "[eliminado por moderación]";
@@ -44,8 +48,8 @@ public class ModerationService {
         return reportAuditRepository.findByReportIdOrderByCreatedAtDesc(reportId);
     }
 
-    /** Crea un reporte sobre una historia (storyId) o un mensaje (messageId). */
-    public Report createReport(Integer storyId, Long messageId, String reason, User reporter) {
+    /** Crea un reporte sobre una historia, un mensaje de comunidad o uno privado. */
+    public Report createReport(Integer storyId, Long messageId, Long privateMessageId, String reason, User reporter) {
         Report report = new Report();
         report.setReason(reason);
         report.setStatus(ReportStatus.PENDING);
@@ -54,7 +58,17 @@ public class ModerationService {
             report.setReporterUsername(reporter.getUsername());
         }
 
-        if (storyId != null) {
+        if (privateMessageId != null) {
+            PrivateMessage pm = privateMessageRepository.findById(privateMessageId)
+                    .orElseThrow(() -> new NoSuchElementException("El mensaje privado " + privateMessageId + " no existe"));
+            report.setTargetType(ReportTargetType.PRIVATE_MESSAGE);
+            report.setMessageId(privateMessageId);
+            report.setContent(pm.getText());
+            Integer authorId = "professional".equals(pm.getFrom()) ? pm.getProfessionalId() : pm.getUserId();
+            report.setReportedUsername(userRepository.findById(authorId)
+                    .map(u -> u.getUsername()).orElse("usuario"));
+            report.setCommunity("Chat privado");
+        } else if (storyId != null) {
             StoryMap story = storyMapRepository.findById(storyId)
                     .orElseThrow(() -> new NoSuchElementException("La historia " + storyId + " no existe"));
             report.setTargetType(ReportTargetType.STORY);
@@ -118,6 +132,11 @@ public class ModerationService {
             communityMessageRepository.findById(report.getMessageId()).ifPresent(m -> {
                 m.setText(REDACTED_MESSAGE);
                 communityMessageRepository.save(m);
+            });
+        } else if (report.getTargetType() == ReportTargetType.PRIVATE_MESSAGE && report.getMessageId() != null) {
+            privateMessageRepository.findById(report.getMessageId()).ifPresent(pm -> {
+                pm.setText(REDACTED_MESSAGE);
+                privateMessageRepository.save(pm);
             });
         }
 

@@ -33,8 +33,8 @@ public class ModerationController {
     @PostMapping("/reports")
     public ResponseEntity<?> createReport(@RequestBody CreateReportRequest request,
             @AuthenticationPrincipal User reporter) {
-        if (request.storyId() == null && request.messageId() == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "storyId o messageId es obligatorio"));
+        if (request.storyId() == null && request.messageId() == null && request.privateMessageId() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "storyId, messageId o privateMessageId es obligatorio"));
         }
         if (request.reason() == null || request.reason().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "reason es obligatorio"));
@@ -44,7 +44,7 @@ public class ModerationController {
         }
         try {
             ReportResponse body = ReportResponse.from(moderationService.createReport(
-                    request.storyId(), request.messageId(), request.reason(), reporter));
+                    request.storyId(), request.messageId(), request.privateMessageId(), request.reason(), reporter));
             return ResponseEntity.status(HttpStatus.CREATED).body(body);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));

@@ -1,7 +1,8 @@
 package shareyourstory.domain.moderation.model;
 
-/** Que se reporta: una historia del mapa o un mensaje de comunidad. */
+/** Que se reporta: una historia del mapa, un mensaje de comunidad o uno privado. */
 public enum ReportTargetType {
     STORY,
-    MESSAGE
+    MESSAGE,
+    PRIVATE_MESSAGE
 }
