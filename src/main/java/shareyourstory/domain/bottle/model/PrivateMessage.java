@@ -1,5 +1,6 @@
 package shareyourstory.domain.bottle.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -19,6 +20,10 @@ public class PrivateMessage {
     private Integer professionalId;
     private String text;
     private LocalDateTime createdAt;
+    // 'from' es palabra reservada de SQL: se mapea a una columna no reservada
+    // (el nombre del campo Java se mantiene para no tocar getFrom/setFrom ni
+    // los llamadores). Sin esto, Hibernate genera un CREATE TABLE invalido.
+    @Column(name = "from_role")
     private String from; // "user" or "professional"
 
     public PrivateMessage() {}

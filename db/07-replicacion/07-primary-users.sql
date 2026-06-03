@@ -25,5 +25,8 @@ GRANT SELECT, SHOW VIEW ON shareYourStory.* TO 'app_ro'@'%';
 
 CREATE USER IF NOT EXISTS 'app_admin'@'%' IDENTIFIED BY 'app_admin_pwd';
 GRANT ALL PRIVILEGES ON shareYourStory.* TO 'app_admin'@'%';
+-- RELOAD global: necesario para las copias con mysqldump --single-transaction
+-- (ejecuta FLUSH TABLES). Ver db/02-usuarios-permisos.sql y db/03-backup.sh.
+GRANT RELOAD ON *.* TO 'app_admin'@'%';
 
 FLUSH PRIVILEGES;

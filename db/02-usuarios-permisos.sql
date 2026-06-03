@@ -19,10 +19,16 @@ GRANT SELECT, SHOW VIEW
   ON shareYourStory.* TO 'app_ro'@'%';
 
 -- -----------------------------------------------------------------------------
--- app_admin 
+-- app_admin
 CREATE USER IF NOT EXISTS 'app_admin'@'%' IDENTIFIED BY 'app_admin_pwd';
 GRANT ALL PRIVILEGES
   ON shareYourStory.* TO 'app_admin'@'%';
+
+-- Privilegio GLOBAL minimo para las COPIAS DE SEGURIDAD (db/03-backup.sh):
+-- mysqldump --single-transaction ejecuta 'FLUSH TABLES', que exige RELOAD
+-- (privilegio global, no acotable a una BD). El script usa ademas
+-- --no-tablespaces para no requerir PROCESS. app_rw / app_ro NO lo reciben.
+GRANT RELOAD ON *.* TO 'app_admin'@'%';
 
 FLUSH PRIVILEGES;
 
