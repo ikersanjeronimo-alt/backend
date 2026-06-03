@@ -9,4 +9,6 @@ import java.util.List;
 public interface PrivateMessageRepository extends JpaRepository<PrivateMessage, Long> {
     List<PrivateMessage> findByUserIdAndProfessionalIdOrProfessionalIdAndUserIdOrderByCreatedAtAsc(
         Integer userId, Integer professionalId, Integer professionalId2, Integer userId2);
+
+    List<PrivateMessage> findByProfessionalIdOrderByCreatedAtDesc(Integer professionalId);
 }
