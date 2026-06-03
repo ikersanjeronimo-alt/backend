@@ -1,6 +1,7 @@
 package shareyourstory.domain.community.controller;
 
 import shareyourstory.domain.community.model.CommunityMessage;
+import shareyourstory.domain.community.dto.CommunityMessageResponse;
 import shareyourstory.domain.community.service.CommunityMessageService;
 import shareyourstory.domain.user.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,14 @@ public class CommunityMessageController {
      * Get all messages for a community
      */
     @GetMapping("/{communityId}/messages")
-    public ResponseEntity<List<CommunityMessage>> getMessages(@PathVariable Integer communityId) {
-        List<CommunityMessage> messages = communityMessageService.getMessagesByCommunity(communityId);
+    public ResponseEntity<List<CommunityMessageResponse>> getMessages(
+            @PathVariable Integer communityId,
+            @AuthenticationPrincipal User user) {
+        Integer currentUserId = user == null ? null : user.getUserId();
+        List<CommunityMessageResponse> messages = communityMessageService
+                .getMessagesByCommunity(communityId).stream()
+                .map(m -> CommunityMessageResponse.from(m, currentUserId))
+                .toList();
         return ResponseEntity.ok(messages);
     }
 
@@ -29,7 +36,7 @@ public class CommunityMessageController {
      * Send a message to a community
      */
     @PostMapping("/{communityId}/messages")
-    public ResponseEntity<CommunityMessage> sendMessage(
+    public ResponseEntity<CommunityMessageResponse> sendMessage(
             @PathVariable Integer communityId,
             @AuthenticationPrincipal User user,
             @RequestBody CommunityMessagePayload payload) {
@@ -47,7 +54,7 @@ public class CommunityMessageController {
                 user.getUserId(),
                 user.getUsername(),
                 text);
-        return ResponseEntity.ok(message);
+        return ResponseEntity.ok(CommunityMessageResponse.from(message, user.getUserId()));
     }
 
     public record CommunityMessagePayload(String text) {
