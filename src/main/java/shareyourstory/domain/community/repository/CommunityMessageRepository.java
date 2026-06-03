@@ -8,4 +8,8 @@ import java.util.List;
 @Repository
 public interface CommunityMessageRepository extends JpaRepository<CommunityMessage, Long> {
     List<CommunityMessage> findByCommunityIdOrderByCreatedAtAsc(Integer communityId);
+
+    long countByUserId(Integer userId);
+
+    CommunityMessage findTopByCommunityIdOrderByCreatedAtDesc(Integer communityId);
 }

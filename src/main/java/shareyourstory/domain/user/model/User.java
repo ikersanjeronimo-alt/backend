@@ -74,6 +74,10 @@ public class User implements UserDetails {
     @Column(name = "`twoFactorEnabled`", nullable = false)
     private boolean twoFactorEnabled = false;
 
+    // Temas elegidos en el onboarding, separados por comas (CSV simple).
+    @Column(name = "topics", length = 512)
+    private String topics;
+
     public User() {}
 
     @PrePersist
@@ -260,5 +264,13 @@ public class User implements UserDetails {
 
     public void setTwoFactorEnabled(boolean twoFactorEnabled) {
         this.twoFactorEnabled = twoFactorEnabled;
+    }
+
+    public String getTopics() {
+        return topics;
+    }
+
+    public void setTopics(String topics) {
+        this.topics = topics;
     }
 }
