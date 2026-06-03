@@ -35,12 +35,24 @@ public class EventController {
         return ResponseEntity.ok(createdEvent);
     }
 
-    @PostMapping("/api/events/{id}/interest")
-    public ResponseEntity<Void> like(@PathVariable Integer id) {
-        eventService.toggleInterest(id);
-        return ResponseEntity.ok().build();
+    @GetMapping("/api/events/{id}")
+    public ResponseEntity<Event> getEvent(@PathVariable Integer id) {
+        Event event = eventService.getEventById(id);
+        return event == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(event);
     }
-    
+
+    @PostMapping("/api/events/{id}/interest")
+    public ResponseEntity<Event> addInterest(@PathVariable Integer id) {
+        Event event = eventService.addInterest(id);
+        return event == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(event);
+    }
+
+    @DeleteMapping("/api/events/{id}/interest")
+    public ResponseEntity<Event> removeInterest(@PathVariable Integer id) {
+        Event event = eventService.removeInterest(id);
+        return event == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(event);
+    }
+
 
     @PutMapping("/api/events/{id}")
     public ResponseEntity<Event> updateEvent(@PathVariable Integer id, @RequestBody Event event) {

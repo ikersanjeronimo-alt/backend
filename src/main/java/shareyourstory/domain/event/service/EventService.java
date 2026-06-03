@@ -27,14 +27,28 @@ public class EventService {
         return event.orElse(null);
     }
 
-    public void toggleInterest(Integer id) {
-        Optional<Event> event = eventRepository.findById(id);
-
-        if (event.isPresent()) {
-            event.get().setReaction(event.get().getReaction() + 1);
-            eventRepository.save(event.get());
-            webSocketService.broadcastEventChange("UPDATE", event.get());
+    /** Suma 1 al contador global de interes y devuelve el evento actualizado. */
+    public Event addInterest(Integer id) {
+        Event event = eventRepository.findById(id).orElse(null);
+        if (event == null) {
+            return null;
         }
+        event.setReaction(event.getReaction() + 1);
+        Event saved = eventRepository.save(event);
+        webSocketService.broadcastEventChange("UPDATE", saved);
+        return saved;
+    }
+
+    /** Resta 1 al contador global de interes (sin bajar de 0) y devuelve el evento. */
+    public Event removeInterest(Integer id) {
+        Event event = eventRepository.findById(id).orElse(null);
+        if (event == null) {
+            return null;
+        }
+        event.setReaction(Math.max(0, event.getReaction() - 1));
+        Event saved = eventRepository.save(event);
+        webSocketService.broadcastEventChange("UPDATE", saved);
+        return saved;
     }
 
     public Event createEvent(Event event) {
