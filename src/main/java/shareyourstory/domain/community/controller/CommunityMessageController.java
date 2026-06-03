@@ -57,6 +57,21 @@ public class CommunityMessageController {
         return ResponseEntity.ok(CommunityMessageResponse.from(message, user.getUserId()));
     }
 
+    /**
+     * Borra un mensaje (solo MODERATOR/ADMINISTRATOR, via SecurityConfig).
+     */
+    @DeleteMapping("/{communityId}/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(
+            @PathVariable Integer communityId,
+            @PathVariable Long messageId,
+            @AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+        communityMessageService.deleteMessage(messageId);
+        return ResponseEntity.noContent().build();
+    }
+
     public record CommunityMessagePayload(String text) {
     }
 }

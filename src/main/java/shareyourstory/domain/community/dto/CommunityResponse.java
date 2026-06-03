@@ -3,33 +3,37 @@ package shareyourstory.domain.community.dto;
 import shareyourstory.domain.community.model.Community;
 
 /**
- * Vista de comunidad para la API. Expone el id como String (el front lo compara
- * con el parametro de ruta, que es String) y la categoria en minusculas (para
- * que case con los filtros del front). No vuelca la entidad JPA directamente.
+ * Vista de comunidad para la API. Expone el id como String, la categoria en
+ * minusculas (para que case con los filtros del front), y `joined`/`members`
+ * calculados por usuario a partir de la membresia real. No vuelca la entidad JPA.
  */
 public record CommunityResponse(
         String id,
         String emoji,
         String name,
         String mod,
+        String modUserId,
         String desc,
         int members,
         int online,
         String category,
         boolean joined,
-        String pinnedNote) {
+        String pinnedNote,
+        boolean chatClosed) {
 
-    public static CommunityResponse from(Community c) {
+    public static CommunityResponse from(Community c, boolean joined, int members) {
         return new CommunityResponse(
                 String.valueOf(c.getId()),
                 c.getEmoji(),
                 c.getName(),
                 c.getMod(),
+                c.getModUserId() == null ? null : String.valueOf(c.getModUserId()),
                 c.getDesc(),
-                c.getMembers(),
+                members,
                 c.getOnline(),
                 c.getCategory() == null ? null : c.getCategory().name().toLowerCase(),
-                c.isJoined(),
-                c.getPinnedNote());
+                joined,
+                c.getPinnedNote(),
+                c.isChatClosed());
     }
 }

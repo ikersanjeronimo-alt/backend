@@ -25,6 +25,8 @@ public class Community {
     private String pinnedNote;
     private CommunityTypes category;
     private boolean joined;
+    private Integer modUserId;
+    private boolean chatClosed = false;
 
     public Long getId() {
         return id;
@@ -104,5 +106,21 @@ public class Community {
 
     public void setJoined(boolean joined) {
         this.joined = joined;
+    }
+
+    public Integer getModUserId() {
+        return modUserId;
+    }
+
+    public void setModUserId(Integer modUserId) {
+        this.modUserId = modUserId;
+    }
+
+    public boolean isChatClosed() {
+        return chatClosed;
+    }
+
+    public void setChatClosed(boolean chatClosed) {
+        this.chatClosed = chatClosed;
     }
 }

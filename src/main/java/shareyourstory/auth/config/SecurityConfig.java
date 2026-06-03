@@ -48,11 +48,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
                         .requestMatchers("/api/testJWT", "/api/users/me/**").authenticated()
                         .requestMatchers("/api/professionals/**").authenticated()
+                        .requestMatchers("/api/chats/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/communities")
                         .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
                         .requestMatchers(HttpMethod.PUT, "/api/communities/*")
                         .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/communities/*")
+                        .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/communities/*/pinned-note")
+                        .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
+                        .requestMatchers(HttpMethod.PATCH, "/api/communities/*/chat-closed")
+                        .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/communities/*/members/*")
+                        .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/communities/*/messages/*")
                         .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
                         .requestMatchers(HttpMethod.POST, "/api/events")
                         .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
@@ -83,7 +92,7 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
 
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         configuration.setAllowedHeaders(List.of("*"));
 

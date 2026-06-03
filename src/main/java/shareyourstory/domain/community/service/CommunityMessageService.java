@@ -46,6 +46,13 @@ public class CommunityMessageService {
         return savedMessage;
     }
 
+    /**
+     * Borra un mensaje por id.
+     */
+    public void deleteMessage(Long messageId) {
+        communityMessageRepository.deleteById(messageId);
+    }
+
     private String formatTime(LocalDateTime dateTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         return dateTime.format(formatter);
