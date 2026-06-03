@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.server.ResponseStatusException;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,12 +15,15 @@ import org.springframework.web.bind.annotation.RestController;
 import shareyourstory.auth.JWT.JWTService;
 import shareyourstory.auth.dto.AnonymousRequest;
 import shareyourstory.auth.dto.AuthResponse;
+import shareyourstory.auth.dto.AuthUserResponse;
 import shareyourstory.auth.dto.BootstrapAdminRequest;
 import shareyourstory.auth.dto.BootstrapAdminResponse;
 import shareyourstory.auth.dto.Get2faQRResponse;
+import shareyourstory.auth.dto.LoginModChallengeResponse;
 import shareyourstory.auth.dto.LoginModRequest;
 import shareyourstory.auth.dto.LoginModWith2FAResponse;
 import shareyourstory.auth.dto.LoginRequest;
+import shareyourstory.auth.dto.VerifyLoginRequest;
 import shareyourstory.auth.dto.RegisterModRequest;
 import shareyourstory.auth.dto.RegisterRequest;
 import shareyourstory.auth.dto.UpdateUsernameRequest;
@@ -99,36 +104,21 @@ public class AuthController {
     }
 
     @PostMapping("/api/auth/login/mod")
-    public ResponseEntity<Void> loginMod(@RequestBody LoginModRequest loginModRequest) {
-        int status = authService.loginMod(loginModRequest);
-        if (status == HttpStatus.ACCEPTED.value()) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.status(status).build();
+    public LoginModChallengeResponse loginMod(@Valid @RequestBody LoginModRequest loginModRequest) {
+        String challengeId = authService.loginMod(loginModRequest);
+        return new LoginModChallengeResponse(challengeId, true);
     }
 
     @PostMapping("/api/auth/login/mod/2fa/code")
-    public ResponseEntity<?> validateLoginWithCode(@RequestBody ValidateQRRequest validateLoginRequest) {
-        User user = (User) userService.loadUserByUsername(validateLoginRequest.email());
-
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Usuario no encontrado");
+    public LoginModWith2FAResponse validateLoginWithCode(@RequestBody VerifyLoginRequest request) {
+        int code;
+        try {
+            code = Integer.parseInt(request.code() == null ? "" : request.code().trim());
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Codigo invalido");
         }
-
-        if (!authService.isStaff(user)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Usuario sin permisos de moderacion");
-        }
-
-        if (!user.isTwoFactorEnabled() || user.getSecretKey() == null || user.getSecretKey().isBlank()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("2FA no activado para este usuario");
-        }
-
-        if (googleAuthService.isValid(user.getSecretKey(), validateLoginRequest.code())) {
-            String token = jwtService.createToken(user);
-            return ResponseEntity.ok(new LoginModWith2FAResponse(token));
-        }
-
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body("Codigo invalido");
+        String token = authService.verifyModLogin(request.challengeId(), code);
+        return new LoginModWith2FAResponse(token);
     }
 
     @PatchMapping("/api/users/me/username")
@@ -142,6 +132,20 @@ public class AuthController {
         user.setNickName(request.username());
         userRepository.save(user);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Devuelve el usuario de la sesion actual (a partir del JWT). El front lo usa
+     * para RESTAURAR la sesion al recargar, en vez de pedir siempre identidad
+     * anonima (que degradaba a cualquier usuario logueado a anonimo).
+     */
+    @GetMapping("/api/users/me")
+    public AuthUserResponse me(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No autenticado");
+        }
+        return new AuthUserResponse(String.valueOf(user.getUserId()), user.getUsername(),
+                user.getRole().name());
     }
 
     @GetMapping("/api/testJWT")

@@ -1,9 +1,13 @@
 package shareyourstory.auth.service;
 
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.catalina.connector.Response;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -41,6 +45,13 @@ public class AuthService {
     @Autowired
     GoogleAuthService googleAuthService;
 
+    // Challenges efimeros del login mod (paso 1 password -> paso 2 TOTP).
+    // En memoria con TTL; se pierden al reiniciar (aceptable para el alcance).
+    private static final long CHALLENGE_TTL_MS = 5 * 60 * 1000L;
+    private final Map<String, ChallengeData> loginChallenges = new ConcurrentHashMap<>();
+
+    private record ChallengeData(String email, long expiresAt) {}
+
     public AuthService() {}
 
     public AuthResponse anonymous(AnonymousRequest anonymousRequest) {
@@ -65,6 +76,23 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest registerRequest) {
+        // Si el registro viene con un anonToken valido de un usuario ANON, se
+        // PROMOCIONA esa misma fila (conserva su identidad y sus datos) en vez de
+        // crear una cuenta nueva y dejar al anonimo huerfano.
+        String anonToken = registerRequest.anonToken();
+        if (anonToken != null && jwtService.validateJwtToken(anonToken)) {
+            String anonUsername = jwtService.getUsernameFromToken(anonToken);
+            User existing = userRepository.findByUserName(anonUsername).orElse(null);
+            if (existing != null && existing.getRole() == UserRole.ANON) {
+                existing.setUsername(registerRequest.username());
+                existing.setNickName(registerRequest.username());
+                existing.setPassword(passwordEncoder.encode(registerRequest.password()));
+                existing.setRole(UserRole.USER);
+                userRepository.save(existing);
+                return toAuthResponse(existing);
+            }
+        }
+
         User user = new User();
         user.setUsername(registerRequest.username());
         user.setNickName(registerRequest.username());
@@ -141,24 +169,50 @@ public class AuthService {
         }
     }
 
-    public int loginMod(LoginModRequest loginModRequest) {
-        if (authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                loginModRequest.email(), loginModRequest.password())) != null) {
-            User user = userRepository.findByMail(loginModRequest.email())
-                    .orElseThrow(() -> new NoSuchElementException("USER NOT FOUND"));
+    /**
+     * Paso 1 del login mod: valida la contrasena y, si el usuario es staff con
+     * 2FA activo, emite un challengeId efimero. Lanza BadCredentialsException
+     * (-> 401 via advice) si la password es incorrecta.
+     */
+    public String loginMod(LoginModRequest loginModRequest) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                loginModRequest.email(), loginModRequest.password()));
 
-            if (!isStaff(user)) {
-                return Response.SC_FORBIDDEN;
-            }
+        User user = userRepository.findByMail(loginModRequest.email())
+                .orElseThrow(() -> new NoSuchElementException("USER NOT FOUND"));
 
-            if (!user.isTwoFactorEnabled() || user.getSecretKey() == null || user.getSecretKey().isBlank()) {
-                return Response.SC_FORBIDDEN;
-            }
-
-            return Response.SC_ACCEPTED;
-        } else {
-            return Response.SC_NOT_ACCEPTABLE;
+        if (!isStaff(user)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario sin permisos de moderacion");
         }
+        if (!user.isTwoFactorEnabled() || user.getSecretKey() == null || user.getSecretKey().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "2FA no activado para este usuario");
+        }
+
+        String challengeId = UUID.randomUUID().toString();
+        loginChallenges.put(challengeId,
+                new ChallengeData(user.getEmail(), System.currentTimeMillis() + CHALLENGE_TTL_MS));
+        return challengeId;
+    }
+
+    /**
+     * Paso 2 del login mod: consume el challengeId del paso 1 (que prueba que la
+     * contrasena ya se valido) y verifica el TOTP. Sin un challenge valido NO se
+     * emite token, de modo que el TOTP por si solo no basta.
+     */
+    public String verifyModLogin(String challengeId, int code) {
+        ChallengeData data = challengeId == null ? null : loginChallenges.remove(challengeId);
+        if (data == null || data.expiresAt() < System.currentTimeMillis()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Desafio de login invalido o expirado");
+        }
+
+        User user = userRepository.findByMail(data.email())
+                .orElseThrow(() -> new NoSuchElementException("USER NOT FOUND"));
+
+        if (user.getSecretKey() == null || !googleAuthService.isValid(user.getSecretKey(), code)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Codigo invalido");
+        }
+
+        return jwtService.createToken(user);
     }
 
     public String manageUser2FA(String email) {
