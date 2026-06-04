@@ -30,24 +30,24 @@ se acuerde de escribir el log en cada sitio.
 
 ## Consulta del historial
 
-`GET /api/moderation/reports/{id}/audit` (solo `ADMINISTRATOR`) →
-`ModerationService.auditFor(id)` → `report_audit`.
+`GET /api/moderation/reports/{id}/audit` (`PROFESSIONAL`/`ADMINISTRATOR`, por la regla
+`/api/moderation/**` de `SecurityConfig`) → `ModerationService.auditFor(id)` → `report_audit`.
 
 ## Orden de puesta en marcha
 
 1. Arrancar la app una vez (Hibernate crea `reports` y `report_audit`).
 2. Aplicar procedimientos y trigger:
    ```bash
-   docker compose -f .devcontainer/compose.yml exec mysql \
+   docker compose -f ../.devcontainer/compose.yml exec -T mysql \
      mysql -u app_admin -papp_admin_pwd shareYourStory < db/04-procedimientos.sql
-   docker compose -f .devcontainer/compose.yml exec mysql \
+   docker compose -f ../.devcontainer/compose.yml exec -T mysql \
      mysql -u app_admin -papp_admin_pwd shareYourStory < db/06-triggers.sql
    ```
 
 ## Prueba (para la defensa)
 
 1. Reportar una historia (`POST /api/moderation/reports`).
-2. Resolverla (`POST /api/moderation/reports/{id}/resolve`, `action=RESOLVED`).
+2. Resolverla (`POST /api/moderation/reports/{id}/resolve`, `action=resolve`).
 3. Comprobar que el trigger generó la fila de auditoría **sin** que el código la
    insertara:
    ```sql

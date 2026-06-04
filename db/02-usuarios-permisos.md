@@ -37,7 +37,7 @@ cada usuario tiene solo los permisos que necesita.
 
 1. Levantar la BD y crear los usuarios **una vez** (como root):
    ```bash
-   docker compose -f .devcontainer/compose.yml exec mysql \
+   docker compose -f ../.devcontainer/compose.yml exec -T mysql \
      mysql -u root -ppasahitza shareYourStory < db/02-usuarios-permisos.sql
    ```
 2. Arrancar la aplicación. Por defecto se conecta como `app_rw` (ver

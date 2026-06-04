@@ -25,9 +25,15 @@ PL/SQL de Oracle).
 |---|---|---|---|
 | `POST` | `/api/moderation/reports` | Autenticado | `INSERT` (JPA) |
 | `GET` | `/api/moderation/reports/pending` | `ADMINISTRATOR` | `SELECT` + `fn_count_pending_reports()` |
-| `POST` | `/api/moderation/reports/{id}/resolve` | `ADMINISTRATOR` | `CALL sp_resolve_report(...)` |
+| `POST` | `/api/moderation/reports/{id}/resolve` | `PROFESSIONAL`/`ADMINISTRATOR` | `CALL sp_resolve_report(...)` con `action: resolve\|warn\|dismiss` |
 
-El control de acceso se ha añadido en `SecurityConfig.java`.
+El control de acceso se ha añadido en `SecurityConfig.java` (`/api/moderation/**` →
+`PROFESSIONAL`/`ADMINISTRATOR`, salvo `POST /reports` que es solo autenticado).
+
+> El procedimiento es **agnóstico al objetivo** del reporte: opera sobre el `reports.id`,
+> así que vale igual para reportes de historias, mensajes de comunidad o mensajes privados
+> (`target_type = STORY | MESSAGE | PRIVATE_MESSAGE`). `"warn"` (avisar) es una acción
+> distinta de resolver/descartar.
 
 ## Orden de puesta en marcha
 
@@ -35,7 +41,7 @@ El control de acceso se ha añadido en `SecurityConfig.java`.
    (`ddl-auto=update`).
 2. **Aplicar el script** de procedimientos:
    ```bash
-   docker compose -f .devcontainer/compose.yml exec mysql \
+   docker compose -f ../.devcontainer/compose.yml exec -T mysql \
      mysql -u app_admin -papp_admin_pwd shareYourStory < db/04-procedimientos.sql
    ```
 3. Ya se pueden usar los endpoints `/api/moderation/**`.
@@ -46,12 +52,12 @@ El control de acceso se ha añadido en `SecurityConfig.java`.
 ## Prueba rápida
 
 ```bash
-# 1) Crear una historia y reportarla (POST /api/storyMap, luego POST /api/moderation/reports)
+# 1) Crear una historia y reportarla (POST /api/stories, luego POST /api/moderation/reports)
 # 2) Ver pendientes
 curl -H "Authorization: Bearer <token-admin>" \
   http://localhost:8080/api/moderation/reports/pending
-# 3) Resolver
+# 3) Resolver (action: resolve | warn | dismiss)
 curl -X POST -H "Authorization: Bearer <token-admin>" -H "Content-Type: application/json" \
-  -d '{"action":"RESOLVED"}' \
+  -d '{"action":"resolve"}' \
   http://localhost:8080/api/moderation/reports/1/resolve
 ```

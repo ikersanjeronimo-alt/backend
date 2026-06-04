@@ -33,13 +33,13 @@ bash db/03-restore.sh db/backups/shareYourStory_20260602_010000.sql
 ### Opción B — Windows / host con Docker (PowerShell)
 ```powershell
 # Backup
-docker compose -f .devcontainer/compose.yml exec mysql `
+docker compose -f ../.devcontainer/compose.yml exec mysql `
   sh -c "mysqldump -u app_admin -papp_admin_pwd --single-transaction --routines --triggers --events --databases shareYourStory" `
   > db/backups/shareYourStory_manual.sql
 
 # Restauración
 Get-Content db/backups/shareYourStory_manual.sql | `
-  docker compose -f .devcontainer/compose.yml exec -T mysql `
+  docker compose -f ../.devcontainer/compose.yml exec -T mysql `
   mysql -u app_admin -papp_admin_pwd
 ```
 
