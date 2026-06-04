@@ -36,7 +36,7 @@ public class JWTService {
                 .claim("id", String.valueOf(user.getUserId()))
                 .claim("username", user.getUsername())
                 .claim("email", user.getEmail())
-                .claim("role", frontendRole(user))
+                .claim("role", user.getRole().name())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(key, Jwts.SIG.HS256).compact();
     }
@@ -69,14 +69,6 @@ public class JWTService {
 
     public String getEmailFromToken(String token) {
         return getUsernameFromToken(token);
-    }
-
-    private String frontendRole(User user) {
-        return switch (user.getRole()) {
-            case PROFESSIONAL -> "MODERATOR";
-            case ADMINISTRATOR -> "ADMIN";
-            default -> user.getRole().name();
-        };
     }
 
 }
