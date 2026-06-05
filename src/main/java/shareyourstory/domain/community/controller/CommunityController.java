@@ -82,12 +82,6 @@ public class CommunityController {
 
     // ── Estado ─────────────────────────────────────────────────────────────────
 
-    @PostMapping("/{id}/online")
-    public CommunityResponse online(@PathVariable Long id, @RequestParam int delta,
-            @AuthenticationPrincipal User user) {
-        return communityService.updateOnline(id, delta, userId(user));
-    }
-
     @PatchMapping("/{id}/pinned-note")
     public CommunityResponse pinnedNote(@PathVariable Long id, @RequestBody Map<String, Object> body,
             @AuthenticationPrincipal User user) {

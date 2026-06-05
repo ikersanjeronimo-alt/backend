@@ -16,6 +16,11 @@ import shareyourstory.domain.moderation.dto.CreateReportRequest;
 import shareyourstory.domain.moderation.dto.ModerationMemberResponse;
 import shareyourstory.domain.moderation.dto.ReportResponse;
 import shareyourstory.domain.moderation.dto.ResolveReportRequest;
+import shareyourstory.domain.moderation.dto.StaffMemberResponse;
+import shareyourstory.domain.moderation.dto.UpdateStaffRequest;
+import shareyourstory.domain.user.model.UserRole;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import shareyourstory.domain.moderation.service.ModerationService;
 import shareyourstory.domain.user.model.User;
 
@@ -97,6 +102,48 @@ public class ModerationController {
     @GetMapping("/members")
     public List<ModerationMemberResponse> members() {
         return moderationService.members();
+    }
+
+    /** Equipo de moderacion: moderadores y administradores. Solo MOD/ADMIN. */
+    @GetMapping("/staff")
+    public List<StaffMemberResponse> staff() {
+        return moderationService.staff();
+    }
+
+    /** Edita un miembro del equipo. Solo ADMIN, y no la cuenta propia. */
+    @PatchMapping("/staff/{id}")
+    public ResponseEntity<?> updateStaff(@PathVariable Integer id,
+            @RequestBody UpdateStaffRequest request,
+            @AuthenticationPrincipal User caller) {
+        if (caller == null || caller.getRole() != UserRole.ADMINISTRATOR) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        if (caller.getId().equals(id)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No puedes editar tu propia cuenta desde aqui"));
+        }
+        try {
+            return ResponseEntity.ok(moderationService.updateStaff(id, request));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** Borra un miembro del equipo. Solo ADMIN, y no la cuenta propia. */
+    @DeleteMapping("/staff/{id}")
+    public ResponseEntity<?> deleteStaff(@PathVariable Integer id,
+            @AuthenticationPrincipal User caller) {
+        if (caller == null || caller.getRole() != UserRole.ADMINISTRATOR) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        if (caller.getId().equals(id)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No puedes borrar tu propia cuenta"));
+        }
+        try {
+            moderationService.deleteStaff(id);
+            return ResponseEntity.noContent().build();
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/members/{id}/warn")

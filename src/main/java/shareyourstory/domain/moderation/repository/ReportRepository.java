@@ -31,4 +31,10 @@ public interface ReportRepository
     long countPendingReportsViaFunction();
 
     long countByReportedUsername(String reportedUsername);
+
+    /**
+     * Todos los reportes que apuntan a una historia concreta (FK story_id). Se
+     * usa para desligarlos antes de borrar la historia y no violar la restriccion.
+     */
+    List<Report> findByStory_Id(Integer storyId);
 }

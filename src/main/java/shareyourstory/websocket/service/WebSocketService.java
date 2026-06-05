@@ -13,7 +13,12 @@ public class WebSocketService {
     SimpMessagingTemplate simpMessagingTemplate;
 
     public void broadcastNewStoryMap(StoryMap storyMap) {
-        simpMessagingTemplate.convertAndSend("/topic/storyMap", storyMap);
+        simpMessagingTemplate.convertAndSend("/topic/storyMap", StoryMapEventDTO.created(storyMap));
+    }
+
+    /** Avisa de que una historia se ha borrado (p. ej. por moderacion). */
+    public void broadcastDeletedStoryMap(Integer storyId) {
+        simpMessagingTemplate.convertAndSend("/topic/storyMap", StoryMapEventDTO.deleted(storyId));
     }
 
     /**
@@ -38,6 +43,12 @@ public class WebSocketService {
      */
     public void broadcastCommunityMessage(String communityId, CommunityMessageDTO message) {
         simpMessagingTemplate.convertAndSend("/topic/communities/" + communityId, message);
+    }
+
+    /** Avisa de que un mensaje de comunidad se ha borrado, para quitarlo en vivo. */
+    public void broadcastDeletedCommunityMessage(String communityId, String messageId) {
+        simpMessagingTemplate.convertAndSend(
+                "/topic/communities/" + communityId, CommunityMessageDTO.deleted(messageId));
     }
 
     /**

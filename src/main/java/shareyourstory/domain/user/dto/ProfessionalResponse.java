@@ -11,7 +11,6 @@ public record ProfessionalResponse(
         String name,
         String specialty,
         List<String> tags,
-        String availability,
-        String availableAt,
+        boolean online,
         String bio) {
 }

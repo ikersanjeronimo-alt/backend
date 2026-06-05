@@ -88,6 +88,27 @@ public class PrivateMessageService {
         return savedMessage;
     }
 
+    /**
+     * Borra un mensaje privado y difunde el borrado por WebSocket a la cola
+     * personal de ambos participantes, para que desaparezca en vivo en el chat
+     * (mismo patrón que saveMessage). Lo usa la moderación al resolver un reporte.
+     */
+    public void deleteMessage(Long messageId) {
+        privateMessageRepository.findById(messageId).ifPresent(m -> {
+            privateMessageRepository.delete(m);
+
+            PrivateMessageDTO dto = PrivateMessageDTO.deleted(
+                    String.valueOf(m.getId()),
+                    String.valueOf(m.getUserId()),
+                    String.valueOf(m.getProfessionalId()));
+
+            userRepository.findById(m.getUserId()).ifPresent(u ->
+                    webSocketService.sendPrivateMessageToUser(u.getUsername(), dto));
+            userRepository.findById(m.getProfessionalId()).ifPresent(p ->
+                    webSocketService.sendPrivateMessageToUser(p.getUsername(), dto));
+        });
+    }
+
     private String formatTime(LocalDateTime dateTime) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         return dateTime.format(formatter);

@@ -12,6 +12,8 @@ import shareyourstory.domain.bottle.repository.PrivateMessageRepository;
 import shareyourstory.domain.community.repository.CommunityMessageRepository;
 import shareyourstory.domain.community.repository.CommunityRepository;
 import shareyourstory.domain.moderation.dto.ModerationMemberResponse;
+import shareyourstory.domain.moderation.dto.StaffMemberResponse;
+import shareyourstory.domain.moderation.dto.UpdateStaffRequest;
 import shareyourstory.domain.moderation.model.Report;
 import shareyourstory.domain.moderation.model.ReportAudit;
 import shareyourstory.domain.moderation.model.ReportStatus;
@@ -41,8 +43,14 @@ public class ModerationService {
     PrivateMessageRepository privateMessageRepository;
     @Autowired
     UserRepository userRepository;
-
-    private static final String REDACTED_MESSAGE = "[eliminado por moderación]";
+    @Autowired
+    shareyourstory.websocket.service.WebSocketService webSocketService;
+    @Autowired
+    shareyourstory.domain.community.service.CommunityMessageService communityMessageService;
+    @Autowired
+    shareyourstory.domain.bottle.service.PrivateMessageService privateMessageService;
+    @Autowired
+    shareyourstory.websocket.service.UserPresenceService userPresenceService;
 
     public List<ReportAudit> auditFor(Integer reportId) {
         return reportAuditRepository.findByReportIdOrderByCreatedAtDesc(reportId);
@@ -125,19 +133,33 @@ public class ModerationService {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new NoSuchElementException("El reporte " + reportId + " no existe"));
 
-        // 2) Sanear el contenido infractor (historia o mensaje).
+        // 2) Sanear el contenido infractor.
+        //    Historia del mapa: se BORRA por completo (no se enmascara). El
+        //    snapshot `content` del reporte conserva el texto original para el
+        //    panel. Antes hay que desligar todos los reportes que apuntan a esa
+        //    historia (FK story_id) para no violar la restriccion al borrarla.
         if (report.getTargetType() == ReportTargetType.STORY && report.getStory() != null) {
-            report.getStory().setMessage(REDACTED_MESSAGE);
+            StoryMap story = report.getStory();
+            Integer storyId = story.getId();
+
+            List<Report> referencing = reportRepository.findByStory_Id(storyId);
+            referencing.forEach(r -> r.setStory(null));
+            reportRepository.saveAll(referencing);
+            reportRepository.flush();
+
+            storyMapRepository.delete(story);
+            storyMapRepository.flush();
+
+            webSocketService.broadcastDeletedStoryMap(storyId);
         } else if (report.getTargetType() == ReportTargetType.MESSAGE && report.getMessageId() != null) {
-            communityMessageRepository.findById(report.getMessageId()).ifPresent(m -> {
-                m.setText(REDACTED_MESSAGE);
-                communityMessageRepository.save(m);
-            });
+            // Borra el mensaje por completo (igual que el delete del moderador) y
+            // difunde el DELETE por WS para que desaparezca en vivo en todas las
+            // sesiones del chat. El snapshot `content` del reporte conserva el texto.
+            communityMessageRepository.findById(report.getMessageId()).ifPresent(m ->
+                    communityMessageService.deleteMessage(m.getCommunityId(), report.getMessageId()));
         } else if (report.getTargetType() == ReportTargetType.PRIVATE_MESSAGE && report.getMessageId() != null) {
-            privateMessageRepository.findById(report.getMessageId()).ifPresent(pm -> {
-                pm.setText(REDACTED_MESSAGE);
-                privateMessageRepository.save(pm);
-            });
+            // Borra el mensaje privado y difunde el DELETE a ambos participantes.
+            privateMessageService.deleteMessage(report.getMessageId());
         }
 
         // 3) "Avisar": incrementa el contador de avisos del autor reportado.
@@ -155,6 +177,59 @@ public class ModerationService {
         return userRepository.findByRole(UserRole.USER).stream()
                 .map(this::toMember)
                 .toList();
+    }
+
+    /** Todo el equipo: moderadores (PROFESSIONAL) y administradores (ADMINISTRATOR). */
+    public List<StaffMemberResponse> staff() {
+        return userRepository.findByRoleIn(List.of(UserRole.PROFESSIONAL, UserRole.ADMINISTRATOR)).stream()
+                .map(this::toStaff)
+                .toList();
+    }
+
+    /** Edita campos basicos de un miembro del equipo (mod/admin). */
+    public StaffMemberResponse updateStaff(Integer userId, UpdateStaffRequest req) {
+        User u = requireStaff(userId);
+        if (req.name() != null) {
+            u.setName(req.name().trim());
+        }
+        if (req.email() != null) {
+            u.setMail(req.email().trim());
+        }
+        if (req.company() != null) {
+            u.setCompanyName(req.company().trim());
+        }
+        if (req.profession() != null) {
+            u.setProfession(req.profession().trim());
+        }
+        userRepository.save(u);
+        return toStaff(u);
+    }
+
+    /** Borra un miembro del equipo (mod/admin). */
+    public void deleteStaff(Integer userId) {
+        User u = requireStaff(userId);
+        userRepository.delete(u);
+    }
+
+    private User requireStaff(Integer userId) {
+        User u = requireUser(userId);
+        if (u.getRole() != UserRole.PROFESSIONAL && u.getRole() != UserRole.ADMINISTRATOR) {
+            throw new NoSuchElementException("El usuario " + userId + " no es moderador ni administrador");
+        }
+        return u;
+    }
+
+    private StaffMemberResponse toStaff(User u) {
+        return new StaffMemberResponse(
+                String.valueOf(u.getUserId()),
+                u.getName(),
+                u.getUsername(),
+                u.getMail(),
+                u.getRole().name(),
+                u.getCompanyName(),
+                u.getProfession(),
+                u.getCreationDate() == null ? "" : u.getCreationDate().toString(),
+                userPresenceService.isOnline(u.getUsername()));
     }
 
     public ModerationMemberResponse warnMember(Integer userId) {

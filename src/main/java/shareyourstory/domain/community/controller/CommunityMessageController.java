@@ -68,7 +68,7 @@ public class CommunityMessageController {
         if (user == null) {
             return ResponseEntity.status(401).build();
         }
-        communityMessageService.deleteMessage(messageId);
+        communityMessageService.deleteMessage(communityId, messageId);
         return ResponseEntity.noContent().build();
     }
 

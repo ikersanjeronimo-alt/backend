@@ -6,6 +6,8 @@ public class CommunityMessageDTO {
     private String text;
     private String time;
     private boolean own;
+    // "DELETE" cuando el evento es un borrado; null para crear/actualizar.
+    private String action;
 
     public CommunityMessageDTO() {}
 
@@ -15,6 +17,22 @@ public class CommunityMessageDTO {
         this.text = text;
         this.time = time;
         this.own = own;
+    }
+
+    /** Evento de borrado: el cliente lo identifica por action == "DELETE" + id. */
+    public static CommunityMessageDTO deleted(String id) {
+        CommunityMessageDTO dto = new CommunityMessageDTO();
+        dto.setId(id);
+        dto.setAction("DELETE");
+        return dto;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
     public String getId() {

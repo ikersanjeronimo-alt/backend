@@ -47,10 +47,13 @@ public class CommunityMessageService {
     }
 
     /**
-     * Borra un mensaje por id.
+     * Borra un mensaje por id y difunde el borrado por WebSocket para que
+     * desaparezca al instante en todos los clientes de esa comunidad.
      */
-    public void deleteMessage(Long messageId) {
+    public void deleteMessage(Integer communityId, Long messageId) {
         communityMessageRepository.deleteById(messageId);
+        webSocketService.broadcastDeletedCommunityMessage(
+                String.valueOf(communityId), String.valueOf(messageId));
     }
 
     private String formatTime(LocalDateTime dateTime) {

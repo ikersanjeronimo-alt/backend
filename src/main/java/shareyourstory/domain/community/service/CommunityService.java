@@ -25,6 +25,9 @@ public class CommunityService {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    CommunityPresenceService presenceService;
+
     // ── Lectura ──────────────────────────────────────────────────────────────
 
     public List<CommunityResponse> getAllCommunities(Integer userId) {
@@ -38,7 +41,8 @@ public class CommunityService {
         boolean joined = userId != null
                 && memberRepository.existsByUserIdAndCommunityId(userId, c.getId());
         int members = (int) memberRepository.countByCommunityId(c.getId());
-        return CommunityResponse.from(c, joined, members);
+        int online = presenceService.count(c.getId());
+        return CommunityResponse.from(c, joined, members, online);
     }
 
     public List<ChatMemberResponse> activeMembers(Long communityId) {
@@ -101,13 +105,6 @@ public class CommunityService {
     }
 
     // ── Estado de la comunidad ───────────────────────────────────────────────
-
-    public CommunityResponse updateOnline(Long communityId, int delta, Integer userId) {
-        Community c = require(communityId);
-        c.setOnline(Math.max(0, c.getOnline() + delta));
-        communityRepository.save(c);
-        return toResponse(c, userId);
-    }
 
     public CommunityResponse setPinnedNote(Long communityId, String note, Integer userId) {
         Community c = require(communityId);

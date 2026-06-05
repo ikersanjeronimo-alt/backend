@@ -8,6 +8,7 @@ import shareyourstory.domain.user.dto.ProfessionalResponse;
 import shareyourstory.domain.user.model.User;
 import shareyourstory.domain.user.model.UserRole;
 import shareyourstory.domain.user.repository.UserRepository;
+import shareyourstory.websocket.service.UserPresenceService;
 
 /**
  * Listado publico de profesionales (usuarios con rol PROFESSIONAL) para el front.
@@ -18,6 +19,9 @@ public class ProfessionalController {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    UserPresenceService presenceService;
 
     @GetMapping("/api/professionals")
     public List<ProfessionalResponse> getProfessionals() {
@@ -36,8 +40,7 @@ public class ProfessionalController {
                 buildName(u),
                 specialty,
                 tags,
-                "today",
-                null,
+                presenceService.isOnline(u.getUsername()),
                 null);
     }
 

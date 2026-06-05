@@ -9,6 +9,8 @@ public class PrivateMessageDTO {
     // correcto cuando llega por su cola personal (/user/queue/private).
     private String userId;
     private String professionalId;
+    // "DELETE" cuando el evento es un borrado; null para un mensaje normal.
+    private String action;
 
     public PrivateMessageDTO() {}
 
@@ -20,6 +22,27 @@ public class PrivateMessageDTO {
         this.time = time;
         this.userId = userId;
         this.professionalId = professionalId;
+    }
+
+    /**
+     * Evento de borrado: el cliente lo identifica por action == "DELETE" + id, y
+     * usa userId/professionalId para enrutarlo al hilo correcto.
+     */
+    public static PrivateMessageDTO deleted(String id, String userId, String professionalId) {
+        PrivateMessageDTO dto = new PrivateMessageDTO();
+        dto.setId(id);
+        dto.setAction("DELETE");
+        dto.setUserId(userId);
+        dto.setProfessionalId(professionalId);
+        return dto;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
     }
 
     public String getId() {
