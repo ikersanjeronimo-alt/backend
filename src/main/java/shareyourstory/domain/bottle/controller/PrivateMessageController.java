@@ -21,6 +21,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/chats")
+@RequestMapping("/api/chats")
 public class PrivateMessageController {
 
     @Autowired

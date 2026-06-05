@@ -13,6 +13,8 @@ import shareyourstory.websocket.service.WebSocketService;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/communities")
@@ -20,6 +22,9 @@ public class CommunityController {
 
     @Autowired
     CommunityService communityService;
+
+    @Autowired
+    CommunityModerationService moderationService;
 
     @Autowired
     WebSocketService webSocketService;
@@ -46,11 +51,8 @@ public class CommunityController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteCommunity(@PathVariable Long id) {
-        Community community = new Community();
-        community.setId(id);
-        communityService.deleteCommunity(id);
-        webSocketService.broadcastCommunityChange("DELETE", community);
+    public void deleteCommunity(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        moderationService.deleteCommunity(id, user);
     }
 
     // ── Membresia ──────────────────────────────────────────────────────────────

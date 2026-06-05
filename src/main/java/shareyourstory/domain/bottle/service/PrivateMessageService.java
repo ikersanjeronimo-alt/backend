@@ -1,5 +1,14 @@
 package shareyourstory.domain.bottle.service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import shareyourstory.domain.bottle.model.PrivateMessage;
 import shareyourstory.domain.bottle.repository.PrivateMessageRepository;
 import shareyourstory.domain.bottle.DTO.PrivateConversationResponse;
@@ -20,6 +29,9 @@ public class PrivateMessageService {
 
     @Autowired
     private PrivateMessageRepository privateMessageRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -110,7 +122,14 @@ public class PrivateMessageService {
     }
 
     private String formatTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return "";
+        }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         return dateTime.format(formatter);
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

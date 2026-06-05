@@ -4,6 +4,7 @@ import shareyourstory.domain.community.model.CommunityMessage;
 import shareyourstory.domain.community.dto.CommunityMessageResponse;
 import shareyourstory.domain.community.service.CommunityMessageService;
 import shareyourstory.domain.user.model.User;
+import shareyourstory.websocket.service.CommunityMessageDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

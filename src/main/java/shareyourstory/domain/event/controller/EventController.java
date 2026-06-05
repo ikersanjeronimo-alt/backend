@@ -3,10 +3,12 @@ package shareyourstory.domain.event.controller;
 import org.springframework.web.bind.annotation.RestController;
 import shareyourstory.domain.event.model.Event;
 import shareyourstory.domain.event.service.EventService;
+import shareyourstory.domain.user.model.User;
 import shareyourstory.websocket.service.WebSocketService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,8 +26,14 @@ public class EventController {
     WebSocketService webSocketService;
 
     @GetMapping("/api/events")
-    public List<Event> getEvents() {
-        return eventService.getAllEvents();
+    public List<Event> getEvents(@AuthenticationPrincipal User user) {
+        return eventService.getAllEvents(user);
+    }
+
+    @GetMapping("/api/events/{id}")
+    public ResponseEntity<Event> getEvent(@PathVariable Integer id, @AuthenticationPrincipal User user) {
+        Event event = eventService.getEventById(id, user);
+        return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
     }
     
     @PostMapping("/api/events")
