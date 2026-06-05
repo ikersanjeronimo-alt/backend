@@ -26,10 +26,7 @@ import shareyourstory.domain.user.model.User;
 import shareyourstory.domain.user.model.UserRole;
 import shareyourstory.domain.user.repository.UserRepository;
 
-/**
- * Endpoints "de mi cuenta". Todo se resuelve a partir del usuario autenticado
- * (@AuthenticationPrincipal); ningun identificador viene del cliente.
- */
+// Ningun identificador viene del cliente; todo se resuelve desde el JWT.
 @RestController
 @RequestMapping("/api/users/me")
 public class UsersMeController {
@@ -109,10 +106,7 @@ public class UsersMeController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * El front no carga los ajustes del servidor (idioma/tema viven en
-     * localStorage por dispositivo). Se acepta para no romper el UI.
-     */
+    // Idioma/tema viven en localStorage; se acepta sin persistir para no romper el UI.
     @PatchMapping("/settings")
     public ResponseEntity<Void> settings(@AuthenticationPrincipal User me,
             @RequestBody(required = false) Map<String, Object> body) {
@@ -120,10 +114,7 @@ public class UsersMeController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * No hay pantalla que muestre el historial de estado de animo; se acepta el
-     * envio sin persistir.
-     */
+    // Sin pantalla de historial de animo todavia; se acepta sin persistir.
     @PostMapping("/mood")
     public ResponseEntity<Void> mood(@AuthenticationPrincipal User me,
             @RequestBody(required = false) Map<String, Object> body) {

@@ -76,10 +76,6 @@ public class CommunityService {
         return communityRepository.save(existing);
     }
 
-    public void deleteCommunity(Long id) {
-        communityRepository.deleteById(id);
-    }
-
     // ── Membresia ──────────────────────────────────────────────────────────────
 
     public CommunityResponse join(Integer userId, Long communityId) {
@@ -94,29 +90,6 @@ public class CommunityService {
     public CommunityResponse leave(Integer userId, Long communityId) {
         Community c = require(communityId);
         memberRepository.deleteByUserIdAndCommunityId(userId, communityId);
-        return toResponse(c, userId);
-    }
-
-    @Transactional
-    public CommunityResponse kick(Long communityId, Integer memberUserId, Integer requesterId) {
-        Community c = require(communityId);
-        memberRepository.deleteByUserIdAndCommunityId(memberUserId, communityId);
-        return toResponse(c, requesterId);
-    }
-
-    // ── Estado de la comunidad ───────────────────────────────────────────────
-
-    public CommunityResponse setPinnedNote(Long communityId, String note, Integer userId) {
-        Community c = require(communityId);
-        c.setPinnedNote(note == null || note.isBlank() ? null : note);
-        communityRepository.save(c);
-        return toResponse(c, userId);
-    }
-
-    public CommunityResponse setChatClosed(Long communityId, boolean closed, Integer userId) {
-        Community c = require(communityId);
-        c.setChatClosed(closed);
-        communityRepository.save(c);
         return toResponse(c, userId);
     }
 

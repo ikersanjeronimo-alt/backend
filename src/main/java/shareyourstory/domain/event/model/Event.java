@@ -23,7 +23,6 @@ public class Event {
     @Transient
     private boolean interested;
 
-    // private User userId;
     public Integer getId() {
         return id;
     }
@@ -39,8 +38,6 @@ public class Event {
     public void setTitle(String title) {
         this.title = title;
     }
-
-
 
     public String getPlace() {
         return place;

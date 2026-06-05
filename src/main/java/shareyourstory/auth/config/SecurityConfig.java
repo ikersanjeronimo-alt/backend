@@ -16,7 +16,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
-import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
 import shareyourstory.auth.JWT.AuthTokenFilter;
 
 @Configuration
@@ -34,11 +33,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    public GoogleAuthenticatorQRGenerator googleAuthenticatorQRGenerator() {
-        return new GoogleAuthenticatorQRGenerator();
-    }
-
-    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
 
         httpSecurity
@@ -48,7 +42,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/events/*/interest").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/events/*/interest").authenticated()
-                        .requestMatchers("/api/testJWT", "/api/users/me/**").authenticated()
+                        .requestMatchers("/api/users/me/**").authenticated()
                         .requestMatchers("/api/professionals/**").authenticated()
                         .requestMatchers("/api/chats/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/communities")
@@ -65,10 +59,6 @@ public class SecurityConfig {
                         .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
                         .requestMatchers(HttpMethod.DELETE, "/api/communities/*/messages/*")
                         .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
-                        .requestMatchers(HttpMethod.POST, "/api/events/*/interest")
-                        .authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/events/*/interest")
-                        .authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/events")
                         .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
                         .requestMatchers(HttpMethod.PUT, "/api/events/**")
@@ -98,7 +88,6 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
 
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         configuration.setAllowedHeaders(List.of("*"));

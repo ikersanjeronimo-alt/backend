@@ -13,7 +13,6 @@ import shareyourstory.domain.community.service.CommunityService;
 import shareyourstory.domain.user.model.User;
 import shareyourstory.websocket.service.WebSocketService;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/communities")
@@ -54,8 +53,6 @@ public class CommunityController {
         moderationService.deleteCommunity(id, user);
     }
 
-    // ── Membresia ──────────────────────────────────────────────────────────────
-
     @PostMapping("/{id}/join")
     public CommunityResponse join(@PathVariable Long id, @AuthenticationPrincipal User user) {
         requireUser(user);
@@ -72,32 +69,6 @@ public class CommunityController {
     public List<ChatMemberResponse> activeMembers(@PathVariable Long id) {
         return communityService.activeMembers(id);
     }
-
-    /** Expulsar a un miembro (solo MODERATOR/ADMINISTRATOR, via SecurityConfig). */
-    @DeleteMapping("/{id}/members/{userId}")
-    public CommunityResponse kick(@PathVariable Long id, @PathVariable Integer userId,
-            @AuthenticationPrincipal User requester) {
-        requireUser(requester);
-        return communityService.kick(id, userId, requester.getUserId());
-    }
-
-    // ── Estado ─────────────────────────────────────────────────────────────────
-
-    @PatchMapping("/{id}/pinned-note")
-    public CommunityResponse pinnedNote(@PathVariable Long id, @RequestBody Map<String, Object> body,
-            @AuthenticationPrincipal User user) {
-        Object note = body.get("note");
-        return communityService.setPinnedNote(id, note == null ? null : String.valueOf(note), userId(user));
-    }
-
-    @PatchMapping("/{id}/chat-closed")
-    public CommunityResponse chatClosed(@PathVariable Long id, @RequestBody Map<String, Object> body,
-            @AuthenticationPrincipal User user) {
-        boolean closed = Boolean.TRUE.equals(body.get("closed"));
-        return communityService.setChatClosed(id, closed, userId(user));
-    }
-
-    // ── Helpers ────────────────────────────────────────────────────────────────
 
     private Integer userId(User user) {
         return user == null ? null : user.getUserId();

@@ -17,12 +17,8 @@ public class SchedulteTask {
     @Autowired
     EmailService emailService;
 
-    /**
-     * Cada medianoche entrega TODAS las cartas cuya fecha de entrega ya llego
-     * (deliveryDate <= ahora), no solo las del dia exacto: asi un dia caido o un
-     * fallo SMTP no pierde la carta. Solo se borra tras enviarse con exito; si el
-     * envio falla, se reintenta en el siguiente ciclo.
-     */
+    // Cada medianoche entrega las cartas con deliveryDate <= ahora. Si el envio falla,
+    // no se borra la carta y se reintenta en el siguiente ciclo.
     @Scheduled(cron = "0 0 0 * * *")
     public void checkForSendEmail() {
         Date now = new Date();
@@ -32,8 +28,7 @@ public class SchedulteTask {
                 try {
                     emailService.send(timeMachine);
                     timeMachineRepository.delete(timeMachine);
-                } catch (Exception e) {
-                    System.out.println("Error enviando carta " + timeMachine.getId() + ": " + e.getMessage());
+                } catch (Exception ignored) {
                 }
             }
         }

@@ -4,20 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
-import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
-import shareyourstory.domain.user.repository.UserRepository;
 
 @Service
 public class GoogleAuthService {
 
     @Autowired
     GoogleAuthenticator googleAuthenticator;
-
-    @Autowired
-    GoogleAuthenticatorQRGenerator googleAuthenticatorQRGenerator;
-
-    @Autowired
-    UserRepository userRepository;
 
     public String generateKey() {
         GoogleAuthenticatorKey key = googleAuthenticator.createCredentials();

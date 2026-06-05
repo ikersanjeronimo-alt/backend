@@ -12,25 +12,11 @@ import org.springframework.web.socket.messaging.SessionUnsubscribeEvent;
 
 import shareyourstory.domain.community.service.CommunityPresenceService;
 
-/**
- * Traduce los eventos de sesion STOMP a presencia por comunidad:
- *  - SUBSCRIBE   a /topic/communities/{id}  -> el usuario entra al chat
- *  - UNSUBSCRIBE                            -> sale (resuelto por subscriptionId)
- *  - DISCONNECT (incluido cierre brusco)    -> sale de todas sus comunidades
- *
- * El DISCONNECT es la clave: lo dispara el broker tambien cuando el cliente se
- * va sin avisar (cerrar pestana, perdida de red, timeout de heartbeat), que es
- * justo el caso que el viejo contador +1/-1 no sabia manejar.
- */
 @Component
 public class WebSocketPresenceListener {
 
-    /**
-     * Solo el topic de una comunidad concreta: id numerico y sin sufijos. El
-     * uso de matches() (ancla completa) excluye a proposito tanto el topic de
-     * lista "/topic/communities" como el de presencia ".../{id}/presence", de
-     * modo que suscribirse a la presencia no cuenta como estar en el chat.
-     */
+    // matches() (ancla completa) excluye "/topic/communities" y ".../presence":
+    // suscribirse a la presencia no cuenta como estar en el chat.
     private static final Pattern COMMUNITY_TOPIC = Pattern.compile("/topic/communities/(\\d+)");
 
     private final CommunityPresenceService presenceService;

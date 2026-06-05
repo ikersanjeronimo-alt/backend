@@ -1,6 +1,5 @@
 package shareyourstory.domain.bottle.service;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,6 +17,8 @@ import shareyourstory.websocket.service.PrivateMessageDTO;
 @Service
 public class PrivateMessageService {
 
+    private static final DateTimeFormatter HHMM = DateTimeFormatter.ofPattern("HH:mm");
+
     @Autowired
     private PrivateMessageRepository privateMessageRepository;
 
@@ -27,19 +28,12 @@ public class PrivateMessageService {
     @Autowired
     private WebSocketService webSocketService;
 
-    /**
-     * Mensajes entre un usuario y un profesional (en cualquier sentido), ordenados.
-     */
     public List<PrivateMessage> getMessages(Integer userId, Integer professionalId) {
         return privateMessageRepository.findByUserIdAndProfessionalIdOrProfessionalIdAndUserIdOrderByCreatedAtAsc(
             userId, professionalId, professionalId, userId
         );
     }
 
-    /**
-     * Bandeja de un profesional: una entrada por usuario con el que ha hablado,
-     * con el ultimo mensaje. Aprovecha el orden DESC para quedarse con el primero.
-     */
     public List<PrivateConversationResponse> inboxFor(Integer professionalId) {
         List<PrivateMessage> all = privateMessageRepository
                 .findByProfessionalIdOrderByCreatedAtDesc(professionalId);
@@ -49,22 +43,18 @@ public class PrivateMessageService {
             latestByUser.putIfAbsent(m.getUserId(), m);
         }
 
-        DateTimeFormatter hhmm = DateTimeFormatter.ofPattern("HH:mm");
         List<PrivateConversationResponse> result = new ArrayList<>();
         for (Map.Entry<Integer, PrivateMessage> e : latestByUser.entrySet()) {
             PrivateMessage m = e.getValue();
             String username = userRepository.findById(e.getKey())
                     .map(u -> u.getUsername()).orElse("usuario");
-            String time = m.getCreatedAt() == null ? "" : m.getCreatedAt().format(hhmm);
+            String time = m.getCreatedAt() == null ? "" : m.getCreatedAt().format(HHMM);
             result.add(new PrivateConversationResponse(
                     String.valueOf(e.getKey()), username, m.getText(), time));
         }
         return result;
     }
 
-    /**
-     * Guarda un mensaje y lo difunde por WebSocket a ambos canales.
-     */
     public PrivateMessage saveMessage(Integer userId, Integer professionalId, String text, String from) {
         PrivateMessage message = new PrivateMessage(userId, professionalId, text, from);
         PrivateMessage savedMessage = privateMessageRepository.save(message);
@@ -78,8 +68,6 @@ public class PrivateMessageService {
             String.valueOf(professionalId)
         );
 
-        // Entrega a la cola PERSONAL de cada participante (por su username). Nadie
-        // mas recibe el mensaje: cierra la fuga del topic compartido por profesional.
         userRepository.findById(userId).ifPresent(u ->
             webSocketService.sendPrivateMessageToUser(u.getUsername(), dto));
         userRepository.findById(professionalId).ifPresent(p ->
@@ -88,11 +76,6 @@ public class PrivateMessageService {
         return savedMessage;
     }
 
-    /**
-     * Borra un mensaje privado y difunde el borrado por WebSocket a la cola
-     * personal de ambos participantes, para que desaparezca en vivo en el chat
-     * (mismo patron que saveMessage). Lo usa la moderacion al resolver un reporte.
-     */
     public void deleteMessage(Long messageId) {
         privateMessageRepository.findById(messageId).ifPresent(m -> {
             privateMessageRepository.delete(m);
@@ -109,11 +92,7 @@ public class PrivateMessageService {
         });
     }
 
-    private String formatTime(LocalDateTime dateTime) {
-        if (dateTime == null) {
-            return "";
-        }
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-        return dateTime.format(formatter);
+    private String formatTime(java.time.LocalDateTime dateTime) {
+        return dateTime == null ? "" : dateTime.format(HHMM);
     }
 }

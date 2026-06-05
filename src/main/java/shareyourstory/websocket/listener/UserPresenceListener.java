@@ -10,11 +10,6 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import shareyourstory.websocket.service.UserPresenceService;
 
-/**
- * Traduce los eventos de sesion STOMP a presencia global de usuario:
- *  - CONNECTED  -> el usuario (Principal del CONNECT) queda online
- *  - DISCONNECT -> se libera la sesion (cierre limpio o brusco)
- */
 @Component
 public class UserPresenceListener {
 

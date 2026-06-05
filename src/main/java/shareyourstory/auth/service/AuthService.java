@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.catalina.connector.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.server.ResponseStatusException;
@@ -52,8 +51,6 @@ public class AuthService {
 
     private record ChallengeData(String email, long expiresAt) {}
 
-    public AuthService() {}
-
     public AuthResponse anonymous(AnonymousRequest anonymousRequest) {
         if (anonymousRequest != null && anonymousRequest.anonToken() != null
                 && jwtService.validateJwtToken(anonymousRequest.anonToken())) {
@@ -76,9 +73,7 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest registerRequest) {
-        // Si el registro viene con un anonToken valido de un usuario ANON, se
-        // PROMOCIONA esa misma fila (conserva su identidad y sus datos) en vez de
-        // crear una cuenta nueva y dejar al anonimo huerfano.
+        // Si hay anonToken valido, promovemos esa fila en vez de crear una nueva.
         String anonToken = registerRequest.anonToken();
         if (anonToken != null && jwtService.validateJwtToken(anonToken)) {
             String anonUsername = jwtService.getUsernameFromToken(anonToken);
@@ -142,12 +137,11 @@ public class AuthService {
                 googleAuthService.getQR(admin.getEmail(), admin.getSecretKey()));
     }
 
-    public int registerMod(RegisterModRequest registerModRequest) {
-        User newUserMod = new User();
-
+    public void registerMod(RegisterModRequest registerModRequest) {
         UserRole role = "ADMINISTRATOR".equals(registerModRequest.role()) ? UserRole.ADMINISTRATOR
                 : UserRole.PROFESSIONAL;
 
+        User newUserMod = new User();
         newUserMod.setName(registerModRequest.name());
         newUserMod.setLastName(registerModRequest.lastName());
         newUserMod.setUsername(registerModRequest.username());
@@ -160,20 +154,9 @@ public class AuthService {
         newUserMod.setRole(role);
         newUserMod.setSecretKey(googleAuthService.generateKey());
 
-        try {
-            userRepository.save(newUserMod);
-            return Response.SC_CREATED;
-        } catch (Exception e) {
-            System.out.println("ERROR WHILE CREATING NEW MOD USER");
-            return Response.SC_CONFLICT;
-        }
+        userRepository.save(newUserMod);
     }
 
-    /**
-     * Paso 1 del login mod: valida la contrasena y, si el usuario es staff con
-     * 2FA activo, emite un challengeId efimero. Lanza BadCredentialsException
-     * (-> 401 via advice) si la password es incorrecta.
-     */
     public String loginMod(LoginModRequest loginModRequest) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                 loginModRequest.email(), loginModRequest.password()));
@@ -194,11 +177,6 @@ public class AuthService {
         return challengeId;
     }
 
-    /**
-     * Paso 2 del login mod: consume el challengeId del paso 1 (que prueba que la
-     * contrasena ya se valido) y verifica el TOTP. Sin un challenge valido NO se
-     * emite token, de modo que el TOTP por si solo no basta.
-     */
     public String verifyModLogin(String challengeId, int code) {
         ChallengeData data = challengeId == null ? null : loginChallenges.remove(challengeId);
         if (data == null || data.expiresAt() < System.currentTimeMillis()) {
@@ -216,42 +194,24 @@ public class AuthService {
     }
 
     public String manageUser2FA(String email) {
-        try {
-            User user = userRepository.findByMail(email).get();
-
-            if (!user.isTwoFactorEnabled()) {
-                if (user.getSecretKey() == null || user.getSecretKey().isBlank()) {
-                    user.setSecretKey(googleAuthService.generateKey());
-                    userRepository.save(user);
-                }
-
-                return googleAuthService.getQR(email, user.getSecretKey());
-            } else {
-                return "Already enabled";
-            }
-
-        } catch (NoSuchElementException e) {
-            return "USER NOT FOUND";
-        } catch (Exception e) {
-            return e.getMessage();
+        User user = userRepository.findByMail(email)
+                .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
+        if (user.getSecretKey() == null || user.getSecretKey().isBlank()) {
+            user.setSecretKey(googleAuthService.generateKey());
+            userRepository.save(user);
         }
+        return googleAuthService.getQR(email, user.getSecretKey());
     }
 
-    public int enableQR(String email, int code) {
-        try {
-            User user = userRepository.findByMail(email).get();
-
-            if (user.getSecretKey() != null && !user.getSecretKey().isBlank()
-                    && googleAuthService.isValid(user.getSecretKey(), code)) {
-                user.setTwoFactorEnabled(true);
-                userRepository.save(user);
-                return Response.SC_ACCEPTED;
-            } else {
-                return Response.SC_NOT_ACCEPTABLE;
-            }
-        } catch (NoSuchElementException e) {
-            return Response.SC_BAD_REQUEST;
+    public void enableQR(String email, int code) {
+        User user = userRepository.findByMail(email)
+                .orElseThrow(() -> new NoSuchElementException("Usuario no encontrado"));
+        if (user.getSecretKey() == null || user.getSecretKey().isBlank()
+                || !googleAuthService.isValid(user.getSecretKey(), code)) {
+            throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "Codigo invalido");
         }
+        user.setTwoFactorEnabled(true);
+        userRepository.save(user);
     }
 
     public AuthResponse toAuthResponse(User user) {

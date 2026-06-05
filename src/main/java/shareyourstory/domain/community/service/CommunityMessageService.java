@@ -11,12 +11,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
 public class CommunityMessageService {
+
+    private static final DateTimeFormatter HHMM = DateTimeFormatter.ofPattern("HH:mm");
 
     @Autowired
     private CommunityMessageRepository communityMessageRepository;
@@ -49,20 +50,15 @@ public class CommunityMessageService {
         return savedMessage;
     }
 
-    /**
-     * Borra un mensaje por id y difunde el borrado por WebSocket para que
-     * desaparezca al instante en todos los clientes de esa comunidad.
-     */
+    // Borra un mensaje y difunde el DELETE por WS para que desaparezca en vivo.
     public void deleteMessage(Integer communityId, Long messageId) {
         communityMessageRepository.deleteById(messageId);
         webSocketService.broadcastDeletedCommunityMessage(
                 String.valueOf(communityId), String.valueOf(messageId));
     }
 
-    private String formatTime(LocalDateTime dateTime) {
-        if (dateTime == null) return "";
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-        return dateTime.format(formatter);
+    private String formatTime(java.time.LocalDateTime dateTime) {
+        return dateTime == null ? "" : dateTime.format(HHMM);
     }
 
     private CommunityMessageDTO toDto(CommunityMessage message, boolean own) {

@@ -37,15 +37,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws").setAllowedOriginPatterns("http://localhost:5173").withSockJS();
     }
 
-    /**
-     * Autentica el canal: el STOMP CONNECT debe traer un JWT valido en la cabecera
-     * Authorization. Sin token valido no se abre la sesion WebSocket. Ata la sesion
-     * a un usuario (Principal) para futuras autorizaciones por destino.
-     *
-     * NOTA: la autorizacion por topic todavia no esta (los mensajes privados se
-     * difunden a /topic/privateChats/{id}, un modelo que conviene migrar a destinos
-     * de usuario /user/queue para que un suscriptor no vea conversaciones ajenas).
-     */
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(new ChannelInterceptor() {

@@ -40,8 +40,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                         .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
-        } catch (Exception e) {
-            System.out.println("Cannot set authentication: " + e);
+        } catch (Exception ignored) {
         }
 
         filterChain.doFilter(request, response);
@@ -56,8 +55,4 @@ public class AuthTokenFilter extends OncePerRequestFilter {
         return null;
     }
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        return false;
-    }
 }

@@ -25,6 +25,10 @@ import shareyourstory.domain.storyMap.repository.StoryMapRepository;
 import shareyourstory.domain.user.model.User;
 import shareyourstory.domain.user.model.UserRole;
 import shareyourstory.domain.user.repository.UserRepository;
+import shareyourstory.websocket.service.WebSocketService;
+import shareyourstory.domain.community.service.CommunityMessageService;
+import shareyourstory.domain.bottle.service.PrivateMessageService;
+import shareyourstory.websocket.service.UserPresenceService;
 
 @Service
 public class ModerationService {
@@ -44,13 +48,13 @@ public class ModerationService {
     @Autowired
     UserRepository userRepository;
     @Autowired
-    shareyourstory.websocket.service.WebSocketService webSocketService;
+    WebSocketService webSocketService;
     @Autowired
-    shareyourstory.domain.community.service.CommunityMessageService communityMessageService;
+    CommunityMessageService communityMessageService;
     @Autowired
-    shareyourstory.domain.bottle.service.PrivateMessageService privateMessageService;
+    PrivateMessageService privateMessageService;
     @Autowired
-    shareyourstory.websocket.service.UserPresenceService userPresenceService;
+    UserPresenceService userPresenceService;
 
     public List<ReportAudit> auditFor(Integer reportId) {
         return reportAuditRepository.findByReportIdOrderByCreatedAtDesc(reportId);

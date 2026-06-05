@@ -3,11 +3,8 @@ package shareyourstory.domain.event.service;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-import shareyourstory.domain.event.model.EventInterest;
 import shareyourstory.domain.event.model.Event;
 import shareyourstory.domain.event.repository.EventInterestRepository;
 import shareyourstory.domain.event.repository.EventRepository;
@@ -104,34 +101,11 @@ public class EventService {
         eventRepository.deleteById(id);
     }
 
-    private Event saveCountAndBroadcast(Event event, User user) {
-        event.setReaction((int) eventInterestRepository.countByEvent_Id(event.getId()));
-        Event saved = eventRepository.save(event);
-        Event hydrated = hydrateInterestState(saved, user);
-        boolean interested = hydrated.isInterested();
-        hydrated.setInterested(false);
-        webSocketService.broadcastEventChange("UPDATE", hydrated);
-        hydrated.setInterested(interested);
-        return hydrated;
-    }
-
     private Event hydrateInterestState(Event event, User user) {
         event.setReaction((int) eventInterestRepository.countByEvent_Id(event.getId()));
         event.setInterested(canUseInterests(user)
             && eventInterestRepository.existsByEvent_IdAndUser_UserId(event.getId(), user.getUserId()));
         return event;
-    }
-
-    private Event requireEvent(Integer id) {
-        return eventRepository.findById(id)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
-    }
-
-    private User requireRegisteredUser(User user) {
-        if (!canUseInterests(user)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Registered username required");
-        }
-        return user;
     }
 
     private boolean canUseInterests(User user) {

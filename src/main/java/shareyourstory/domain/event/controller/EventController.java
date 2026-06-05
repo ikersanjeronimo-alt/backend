@@ -35,18 +35,12 @@ public class EventController {
         Event event = eventService.getEventById(id, user);
         return event != null ? ResponseEntity.ok(event) : ResponseEntity.notFound().build();
     }
-    
+
     @PostMapping("/api/events")
     public ResponseEntity<Event> createEvent(@RequestBody Event event) {
         Event createdEvent = eventService.createEvent(event);
         webSocketService.broadcastEventChange("CREATE", createdEvent);
         return ResponseEntity.ok(createdEvent);
-    }
-
-    @GetMapping("/api/events/{id}")
-    public ResponseEntity<Event> getEvent(@PathVariable Integer id) {
-        Event event = eventService.getEventById(id);
-        return event == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(event);
     }
 
     @PostMapping("/api/events/{id}/interest")

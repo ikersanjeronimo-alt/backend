@@ -7,7 +7,12 @@ import shareyourstory.domain.user.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
@@ -17,9 +22,6 @@ public class CommunityMessageController {
     @Autowired
     private CommunityMessageService communityMessageService;
 
-    /**
-     * Get all messages for a community
-     */
     @GetMapping("/{communityId}/messages")
     public ResponseEntity<List<CommunityMessageResponse>> getMessages(
             @PathVariable Integer communityId,
@@ -32,9 +34,6 @@ public class CommunityMessageController {
         return ResponseEntity.ok(messages);
     }
 
-    /**
-     * Send a message to a community
-     */
     @PostMapping("/{communityId}/messages")
     public ResponseEntity<CommunityMessageResponse> sendMessage(
             @PathVariable Integer communityId,
@@ -51,21 +50,6 @@ public class CommunityMessageController {
 
         CommunityMessage message = communityMessageService.saveMessage(communityId, user, text);
         return ResponseEntity.ok(CommunityMessageResponse.from(message, user.getUserId()));
-    }
-
-    /**
-     * Borra un mensaje (solo MODERATOR/ADMINISTRATOR, via SecurityConfig).
-     */
-    @DeleteMapping("/{communityId}/messages/{messageId}")
-    public ResponseEntity<Void> deleteMessage(
-            @PathVariable Integer communityId,
-            @PathVariable Long messageId,
-            @AuthenticationPrincipal User user) {
-        if (user == null) {
-            return ResponseEntity.status(401).build();
-        }
-        communityMessageService.deleteMessage(communityId, messageId);
-        return ResponseEntity.noContent().build();
     }
 
     public record CommunityMessagePayload(String text) {

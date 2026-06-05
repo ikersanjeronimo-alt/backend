@@ -12,16 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Manejo centralizado de excepciones para toda la API.
- *
- * Traduce las excepciones del framework a codigos HTTP coherentes (antes
- * acababan en 500 genericos porque no habia ningun @ControllerAdvice).
- *
- * OJO: a proposito NO hay un @ExceptionHandler(Exception.class) catch-all.
- * Las excepciones de dominio se lanzan como ResponseStatusException, que Spring
- * resuelve nativamente conservando su status; un catch-all las pisaria.
- */
+// Sin catch-all: ResponseStatusException se resuelve sola conservando su status.
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

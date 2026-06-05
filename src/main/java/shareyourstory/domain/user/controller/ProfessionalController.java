@@ -10,10 +10,6 @@ import shareyourstory.domain.user.model.UserRole;
 import shareyourstory.domain.user.repository.UserRepository;
 import shareyourstory.websocket.service.UserPresenceService;
 
-/**
- * Listado publico de profesionales (usuarios con rol PROFESSIONAL) para el front.
- * Mapea a un DTO seguro: no expone password ni secretKey.
- */
 @RestController
 public class ProfessionalController {
 
