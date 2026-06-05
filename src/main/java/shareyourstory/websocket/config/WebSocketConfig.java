@@ -25,7 +25,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic");
+        // "/queue" es imprescindible para los destinos de usuario: los mensajes
+        // privados se envian con convertAndSendToUser(..., "/queue/private", ...),
+        // que Spring reescribe a un destino bajo "/queue". Sin este prefijo el
+        // broker simple los descarta y el chat privado no llega en tiempo real.
+        config.enableSimpleBroker("/topic", "/queue");
     }
 
     @Override

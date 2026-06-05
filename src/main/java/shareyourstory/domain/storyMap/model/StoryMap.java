@@ -1,5 +1,6 @@
 package shareyourstory.domain.storyMap.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -14,6 +15,9 @@ public class StoryMap {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    // 300 para casar con el limite del front (MapPage). Sin esto, Hibernate
+    // mapea un String a VARCHAR(255) y las historias de 256-300 chars no caben.
+    @Column(length = 300)
     private String message;
     private double latitude;
     private double longitude;

@@ -18,10 +18,18 @@ Por eso, resolver (`resolve`/`warn`) modifica **varias tablas en una sola unidad
 1. **`reports`** — mediante el procedimiento almacenado `sp_resolve_report`
    (status → `RESOLVED`/`DISMISSED`, `resolved_by`, `resolved_at`).
 2. **El contenido infractor**, según `target_type` del reporte:
-   - `STORY` → se sanea `storyMaps.message`.
-   - `MESSAGE` → se sanea `community_messages.text`.
-   - `PRIVATE_MESSAGE` → se sanea `private_messages.text`.
-   (Todos a `"[eliminado por moderación]"`.)
+   - `STORY` → se **borra** la fila de `storyMaps` por completo (antes se desligan
+     los reportes que la referencian poniendo `reports.story_id = NULL`, para no
+     violar la FK; el snapshot `reports.content` conserva el texto reportado). Se
+     difunde un evento `DELETE` por `/topic/storyMap` para que el mapa lo quite en vivo.
+   - `MESSAGE` → se **borra** la fila de `community_messages` (igual que el delete del
+     moderador) y se difunde un evento `DELETE` por `/topic/communities/{id}` para que
+     desaparezca en vivo en todas las sesiones del chat. El snapshot `reports.content`
+     conserva el texto reportado para el panel.
+   - `PRIVATE_MESSAGE` → se **borra** la fila de `private_messages` y se difunde un
+     evento `DELETE` a la cola personal de ambos participantes (`/user/queue/private`)
+     para que desaparezca en vivo en el chat. El snapshot `reports.content` conserva
+     el texto reportado.
 3. **`users`** (solo `warn`) — incrementa `warnings` del autor reportado.
 
 ```java

@@ -21,7 +21,7 @@ public record CommunityResponse(
         String pinnedNote,
         boolean chatClosed) {
 
-    public static CommunityResponse from(Community c, boolean joined, int members) {
+    public static CommunityResponse from(Community c, boolean joined, int members, int online) {
         return new CommunityResponse(
                 String.valueOf(c.getId()),
                 c.getEmoji(),
@@ -30,7 +30,7 @@ public record CommunityResponse(
                 c.getModUserId() == null ? null : String.valueOf(c.getModUserId()),
                 c.getDesc(),
                 members,
-                c.getOnline(),
+                online,
                 c.getCategory() == null ? null : c.getCategory().name().toLowerCase(),
                 joined,
                 c.getPinnedNote(),
