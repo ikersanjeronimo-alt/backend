@@ -4,7 +4,6 @@ import shareyourstory.domain.community.model.CommunityMessage;
 import shareyourstory.domain.community.dto.CommunityMessageResponse;
 import shareyourstory.domain.community.service.CommunityMessageService;
 import shareyourstory.domain.user.model.User;
-import shareyourstory.websocket.service.CommunityMessageDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -50,11 +49,7 @@ public class CommunityMessageController {
             return ResponseEntity.badRequest().build();
         }
 
-        CommunityMessage message = communityMessageService.saveMessage(
-                communityId,
-                user.getUserId(),
-                user.getUsername(),
-                text);
+        CommunityMessage message = communityMessageService.saveMessage(communityId, user, text);
         return ResponseEntity.ok(CommunityMessageResponse.from(message, user.getUserId()));
     }
 

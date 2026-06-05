@@ -83,12 +83,4 @@ public class CommunityMessageDTO {
     public void setOwn(boolean own) {
         this.own = own;
     }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
-        this.action = action;
-    }
 }

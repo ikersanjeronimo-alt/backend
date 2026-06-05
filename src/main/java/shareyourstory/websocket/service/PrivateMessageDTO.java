@@ -2,15 +2,13 @@ package shareyourstory.websocket.service;
 
 public class PrivateMessageDTO {
     private String id;
+    // Ids de la conversacion: permiten al cliente enrutar el mensaje al hilo
+    // correcto cuando llega por su cola personal (/user/queue/private).
     private String userId;
     private String professionalId;
     private String from; // "user" or "professional"
     private String text;
     private String time;
-    // Ids de la conversacion: permiten al cliente enrutar el mensaje al hilo
-    // correcto cuando llega por su cola personal (/user/queue/private).
-    private String userId;
-    private String professionalId;
     // "DELETE" cuando el evento es un borrado; null para un mensaje normal.
     private String action;
 
@@ -45,15 +43,6 @@ public class PrivateMessageDTO {
 
     public void setAction(String action) {
         this.action = action;
-    }
-
-    public PrivateMessageDTO(String id, String userId, String professionalId, String from, String text, String time) {
-        this.id = id;
-        this.userId = userId;
-        this.professionalId = professionalId;
-        this.from = from;
-        this.text = text;
-        this.time = time;
     }
 
     public String getId() {
@@ -102,21 +91,5 @@ public class PrivateMessageDTO {
 
     public void setTime(String time) {
         this.time = time;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public String getProfessionalId() {
-        return professionalId;
-    }
-
-    public void setProfessionalId(String professionalId) {
-        this.professionalId = professionalId;
     }
 }

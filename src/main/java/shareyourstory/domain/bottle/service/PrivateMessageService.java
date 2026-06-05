@@ -2,36 +2,24 @@ package shareyourstory.domain.bottle.service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import shareyourstory.domain.bottle.model.PrivateMessage;
 import shareyourstory.domain.bottle.repository.PrivateMessageRepository;
 import shareyourstory.domain.bottle.DTO.PrivateConversationResponse;
 import shareyourstory.domain.user.repository.UserRepository;
 import shareyourstory.websocket.service.WebSocketService;
 import shareyourstory.websocket.service.PrivateMessageDTO;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class PrivateMessageService {
 
     @Autowired
     private PrivateMessageRepository privateMessageRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -103,7 +91,7 @@ public class PrivateMessageService {
     /**
      * Borra un mensaje privado y difunde el borrado por WebSocket a la cola
      * personal de ambos participantes, para que desaparezca en vivo en el chat
-     * (mismo patrón que saveMessage). Lo usa la moderación al resolver un reporte.
+     * (mismo patron que saveMessage). Lo usa la moderacion al resolver un reporte.
      */
     public void deleteMessage(Long messageId) {
         privateMessageRepository.findById(messageId).ifPresent(m -> {
@@ -127,9 +115,5 @@ public class PrivateMessageService {
         }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         return dateTime.format(formatter);
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
     }
 }

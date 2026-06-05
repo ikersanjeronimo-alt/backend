@@ -127,7 +127,6 @@ public class AuthController {
 
     @PatchMapping("/api/users/me/username")
     public ResponseEntity<AuthResponse> updateUsername(@AuthenticationPrincipal User user,
-    public ResponseEntity<AuthResponse> updateUsername(@AuthenticationPrincipal User user,
             @RequestBody UpdateUsernameRequest request) {
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

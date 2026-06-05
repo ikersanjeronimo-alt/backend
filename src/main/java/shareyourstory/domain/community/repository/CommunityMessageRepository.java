@@ -12,4 +12,6 @@ public interface CommunityMessageRepository extends JpaRepository<CommunityMessa
     long countByUserId(Integer userId);
 
     CommunityMessage findTopByCommunityIdOrderByCreatedAtDesc(Integer communityId);
+
+    void deleteByCommunityId(Integer communityId);
 }

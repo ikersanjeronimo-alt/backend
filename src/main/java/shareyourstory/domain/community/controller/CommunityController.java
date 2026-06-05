@@ -1,20 +1,19 @@
 package shareyourstory.domain.community.controller;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.server.ResponseStatusException;
 import shareyourstory.domain.community.model.Community;
 import shareyourstory.domain.community.dto.ChatMemberResponse;
 import shareyourstory.domain.community.dto.CommunityResponse;
+import shareyourstory.domain.community.service.CommunityModerationService;
 import shareyourstory.domain.community.service.CommunityService;
 import shareyourstory.domain.user.model.User;
 import shareyourstory.websocket.service.WebSocketService;
 import java.util.List;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/communities")

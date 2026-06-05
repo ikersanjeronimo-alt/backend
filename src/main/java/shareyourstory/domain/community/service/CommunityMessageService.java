@@ -4,6 +4,7 @@ import shareyourstory.domain.community.model.CommunityMessage;
 import shareyourstory.domain.community.model.Community;
 import shareyourstory.domain.community.repository.CommunityMessageRepository;
 import shareyourstory.domain.community.repository.CommunityRepository;
+import shareyourstory.domain.user.model.User;
 import shareyourstory.websocket.service.WebSocketService;
 import shareyourstory.websocket.service.CommunityMessageDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,20 +30,11 @@ public class CommunityMessageService {
     @Autowired
     private CommunityModerationService moderationService;
 
-    /**
-     * Get all messages for a community
-     */
-    public List<CommunityMessageDTO> getMessagesByCommunity(Integer communityId, shareyourstory.domain.user.model.User user) {
-        return communityMessageRepository.findByCommunityIdOrderByCreatedAtAsc(communityId).stream()
-            .map(message -> toDto(message, user != null && user.getUserId() != null
-                && user.getUserId().equals(message.getUserId())))
-            .toList();
+    public List<CommunityMessage> getMessagesByCommunity(Integer communityId) {
+        return communityMessageRepository.findByCommunityIdOrderByCreatedAtAsc(communityId);
     }
 
-    /**
-     * Save a message and broadcast it via WebSocket
-     */
-    public CommunityMessageDTO saveMessage(Integer communityId, shareyourstory.domain.user.model.User user, String text) {
+    public CommunityMessage saveMessage(Integer communityId, User user, String text) {
         Community community = communityRepository.findById(communityId.longValue())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Community not found"));
         if (!moderationService.canSendMessage(community, user)) {
@@ -51,14 +43,7 @@ public class CommunityMessageService {
         CommunityMessage message = new CommunityMessage(communityId, user.getUserId(), user.getUsername(), text);
         CommunityMessage savedMessage = communityMessageRepository.save(message);
 
-        // Convert to DTO and broadcast via WebSocket
-        CommunityMessageDTO dto = new CommunityMessageDTO(
-            String.valueOf(savedMessage.getId()),
-            username,
-            text,
-            formatTime(savedMessage.getCreatedAt()),
-            false  // own = false (it's not the current user's message in broadcast context)
-        );
+        CommunityMessageDTO dto = toDto(savedMessage, false);
         webSocketService.broadcastCommunityMessage(String.valueOf(communityId), dto);
 
         return savedMessage;
@@ -75,6 +60,7 @@ public class CommunityMessageService {
     }
 
     private String formatTime(LocalDateTime dateTime) {
+        if (dateTime == null) return "";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         return dateTime.format(formatter);
     }
@@ -82,12 +68,12 @@ public class CommunityMessageService {
     private CommunityMessageDTO toDto(CommunityMessage message, boolean own) {
         CommunityMessageDTO dto = new CommunityMessageDTO(
             String.valueOf(message.getId()),
-            message.getUserId() != null ? String.valueOf(message.getUserId()) : null,
             message.getUsername(),
             message.getText(),
             formatTime(message.getCreatedAt()),
             own
         );
+        dto.setUserId(message.getUserId() != null ? String.valueOf(message.getUserId()) : null);
         dto.setAction(message.getAction());
         return dto;
     }
