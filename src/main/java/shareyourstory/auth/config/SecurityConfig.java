@@ -93,7 +93,9 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
+        // setAllowedOriginPatterns (en vez de setAllowedOrigins) permite comodines
+        // como https://*.trycloudflare.com y es compatible con allowCredentials(true).
+        configuration.setAllowedOriginPatterns(
                 Arrays.stream(allowedOrigins.split(",")).map(String::trim).toList());
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
