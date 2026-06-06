@@ -1,6 +1,8 @@
 package shareyourstory.auth.config;
 
+import java.util.Arrays;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,6 +23,11 @@ import shareyourstory.auth.JWT.AuthTokenFilter;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    // Origenes permitidos por CORS, separados por coma. Configurable por entorno
+    // (CORS_ALLOWED_ORIGINS) para apuntar al dominio real del frontend en produccion.
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
 
     @Bean
     public AuthTokenFilter authTokenFilter() {
@@ -86,7 +93,8 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(
+                Arrays.stream(allowedOrigins.split(",")).map(String::trim).toList());
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 

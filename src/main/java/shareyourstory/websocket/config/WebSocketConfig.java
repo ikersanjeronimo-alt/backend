@@ -1,6 +1,7 @@
 package shareyourstory.websocket.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -23,6 +24,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Autowired
     private JWTService jwtService;
 
+    // Mismos origenes permitidos que el CORS HTTP (CORS_ALLOWED_ORIGINS).
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // "/queue" es imprescindible para los destinos de usuario: los mensajes
@@ -34,7 +39,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws").setAllowedOriginPatterns("http://localhost:5173").withSockJS();
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns(allowedOrigins.split(","))
+                .withSockJS();
     }
 
     @Override
