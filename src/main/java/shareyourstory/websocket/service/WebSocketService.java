@@ -48,7 +48,9 @@ public class WebSocketService {
     // una senal sin datos (no el contenido del reporte) para no exponer informacion
     // sensible en un topic publico; el panel recarga la lista via el endpoint REST.
     public void broadcastNewReport() {
-        simpMessagingTemplate.convertAndSend("/topic/moderation/reports",
-                java.util.Map.of("type", "NEW_REPORT"));
+        // Cast a Object para forzar convertAndSend(destino, payload) y evitar la
+        // ambiguedad con la sobrecarga convertAndSend(payload, headers) que toma Map.
+        Object payload = java.util.Map.of("type", "NEW_REPORT");
+        simpMessagingTemplate.convertAndSend("/topic/moderation/reports", payload);
     }
 }
