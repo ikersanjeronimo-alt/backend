@@ -44,6 +44,7 @@ public class EventService {
     }
 
     /** Registra interes del usuario y devuelve el evento actualizado. */
+    @Transactional
     public Event addInterest(Integer id, User user) {
         Event event = eventRepository.findById(id).orElse(null);
         if (event == null) {
@@ -59,6 +60,7 @@ public class EventService {
     }
 
     /** Quita el interes del usuario y devuelve el evento actualizado. */
+    @Transactional
     public Event removeInterest(Integer id, User user) {
         Event event = eventRepository.findById(id).orElse(null);
         if (event == null) {
