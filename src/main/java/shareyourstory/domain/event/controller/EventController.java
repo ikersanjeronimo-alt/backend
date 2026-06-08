@@ -44,14 +44,14 @@ public class EventController {
     }
 
     @PostMapping("/api/events/{id}/interest")
-    public ResponseEntity<Event> addInterest(@PathVariable Integer id) {
-        Event event = eventService.addInterest(id);
+    public ResponseEntity<Event> addInterest(@PathVariable Integer id, @AuthenticationPrincipal User user) {
+        Event event = eventService.addInterest(id, user);
         return event == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(event);
     }
 
     @DeleteMapping("/api/events/{id}/interest")
-    public ResponseEntity<Event> removeInterest(@PathVariable Integer id) {
-        Event event = eventService.removeInterest(id);
+    public ResponseEntity<Event> removeInterest(@PathVariable Integer id, @AuthenticationPrincipal User user) {
+        Event event = eventService.removeInterest(id, user);
         return event == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(event);
     }
 

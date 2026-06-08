@@ -43,28 +43,33 @@ public class EventService {
         return event.map(value -> hydrateInterestState(value, user)).orElse(null);
     }
 
-    /** Suma 1 al contador global de interes y devuelve el evento actualizado. */
-    public Event addInterest(Integer id) {
+    /** Registra interes del usuario y devuelve el evento actualizado. */
+    public Event addInterest(Integer id, User user) {
         Event event = eventRepository.findById(id).orElse(null);
         if (event == null) {
             return null;
         }
-        event.setReaction(event.getReaction() + 1);
-        Event saved = eventRepository.save(event);
-        webSocketService.broadcastEventChange("UPDATE", saved);
-        return saved;
+        if (user != null && user.getUserId() != null
+                && !eventInterestRepository.existsByEvent_IdAndUser_UserId(id, user.getUserId())) {
+            eventInterestRepository.save(new shareyourstory.domain.event.model.EventInterest(event, user));
+        }
+        Event hydrated = hydrateInterestState(event, user);
+        webSocketService.broadcastEventChange("UPDATE", hydrated);
+        return hydrated;
     }
 
-    /** Resta 1 al contador global de interes (sin bajar de 0) y devuelve el evento. */
-    public Event removeInterest(Integer id) {
+    /** Quita el interes del usuario y devuelve el evento actualizado. */
+    public Event removeInterest(Integer id, User user) {
         Event event = eventRepository.findById(id).orElse(null);
         if (event == null) {
             return null;
         }
-        event.setReaction(Math.max(0, event.getReaction() - 1));
-        Event saved = eventRepository.save(event);
-        webSocketService.broadcastEventChange("UPDATE", saved);
-        return saved;
+        if (user != null && user.getUserId() != null) {
+            eventInterestRepository.deleteByEvent_IdAndUser_UserId(id, user.getUserId());
+        }
+        Event hydrated = hydrateInterestState(event, user);
+        webSocketService.broadcastEventChange("UPDATE", hydrated);
+        return hydrated;
     }
 
     public Event createEvent(Event event) {
