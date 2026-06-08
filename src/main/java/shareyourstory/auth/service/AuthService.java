@@ -178,8 +178,9 @@ public class AuthService {
     }
 
     public String verifyModLogin(String challengeId, int code) {
-        ChallengeData data = challengeId == null ? null : loginChallenges.remove(challengeId);
+        ChallengeData data = challengeId == null ? null : loginChallenges.get(challengeId);
         if (data == null || data.expiresAt() < System.currentTimeMillis()) {
+            loginChallenges.remove(challengeId);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Desafio de login invalido o expirado");
         }
 
@@ -190,6 +191,7 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Codigo invalido");
         }
 
+        loginChallenges.remove(challengeId);
         return jwtService.createToken(user);
     }
 
