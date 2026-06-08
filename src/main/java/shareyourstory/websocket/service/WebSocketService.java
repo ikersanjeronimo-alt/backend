@@ -43,4 +43,12 @@ public class WebSocketService {
     public void broadcastCommunityChange(String action, Community community) {
         simpMessagingTemplate.convertAndSend("/topic/communities", new CommunityChangeDTO(action, community));
     }
+
+    // Aviso de "hay un reporte nuevo" para el panel de moderacion. Se difunde SOLO
+    // una senal sin datos (no el contenido del reporte) para no exponer informacion
+    // sensible en un topic publico; el panel recarga la lista via el endpoint REST.
+    public void broadcastNewReport() {
+        simpMessagingTemplate.convertAndSend("/topic/moderation/reports",
+                java.util.Map.of("type", "NEW_REPORT"));
+    }
 }

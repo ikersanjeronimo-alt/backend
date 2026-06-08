@@ -23,15 +23,18 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import shareyourstory.domain.moderation.service.ModerationService;
 import shareyourstory.domain.user.model.User;
+import shareyourstory.websocket.service.WebSocketService;
 
 @RestController
 @RequestMapping("/api/moderation")
 public class ModerationController {
 
     private final ModerationService moderationService;
+    private final WebSocketService webSocketService;
 
-    public ModerationController(ModerationService moderationService) {
+    public ModerationController(ModerationService moderationService, WebSocketService webSocketService) {
         this.moderationService = moderationService;
+        this.webSocketService = webSocketService;
     }
 
     /** Cualquier usuario autenticado puede reportar una historia o un mensaje. */
@@ -50,6 +53,7 @@ public class ModerationController {
         try {
             ReportResponse body = ReportResponse.from(moderationService.createReport(
                     request.storyId(), request.messageId(), request.privateMessageId(), request.reason(), reporter));
+            webSocketService.broadcastNewReport();
             return ResponseEntity.status(HttpStatus.CREATED).body(body);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
