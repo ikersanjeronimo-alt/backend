@@ -12,6 +12,7 @@ import shareyourstory.domain.community.model.CommunityMember;
 import shareyourstory.domain.community.repository.CommunityMemberRepository;
 import shareyourstory.domain.community.repository.CommunityRepository;
 import shareyourstory.domain.user.repository.UserRepository;
+import shareyourstory.websocket.service.UserPresenceService;
 
 @Service
 public class CommunityService {
@@ -27,6 +28,9 @@ public class CommunityService {
 
     @Autowired
     CommunityPresenceService presenceService;
+
+    @Autowired
+    UserPresenceService userPresenceService;
 
     // ── Lectura ──────────────────────────────────────────────────────────────
 
@@ -51,7 +55,8 @@ public class CommunityService {
                     String username = userRepository.findById(m.getUserId())
                             .map(u -> u.getUsername()).orElse("usuario");
                     return new ChatMemberResponse(
-                            String.valueOf(m.getUserId()), username, initials(username));
+                            String.valueOf(m.getUserId()), username, initials(username),
+                            userPresenceService.isOnline(username));
                 })
                 .toList();
     }
