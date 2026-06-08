@@ -1,6 +1,8 @@
 package shareyourstory.domain.timeMachine.schedule;
 
 import java.util.Date;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -10,6 +12,8 @@ import shareyourstory.domain.timeMachine.service.EmailService;
 
 @Component
 public class SchedulteTask {
+
+    private static final Logger log = LoggerFactory.getLogger(SchedulteTask.class);
 
     @Autowired
     TimeMachineRepository timeMachineRepository;
@@ -28,7 +32,11 @@ public class SchedulteTask {
                 try {
                     emailService.send(timeMachine);
                     timeMachineRepository.delete(timeMachine);
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    // No se borra la carta: se reintenta el proximo ciclo. Se registra
+                    // para no esconder fallos de SMTP (p. ej. credenciales MAIL_* vacias).
+                    log.warn("No se pudo entregar la carta id={} a {}: {}",
+                            timeMachine.getId(), timeMachine.getEmail(), e.getMessage());
                 }
             }
         }
