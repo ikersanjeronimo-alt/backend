@@ -9,7 +9,6 @@ import shareyourstory.domain.event.model.Event;
 import shareyourstory.domain.event.repository.EventInterestRepository;
 import shareyourstory.domain.event.repository.EventRepository;
 import shareyourstory.domain.user.model.User;
-import shareyourstory.domain.user.model.UserRole;
 import shareyourstory.websocket.service.WebSocketService;
 
 @Service
@@ -116,8 +115,9 @@ public class EventService {
     }
 
     private boolean canUseInterests(User user) {
+        // Tambien los anonimos: tienen userId estable (el token anonimo se reutiliza
+        // entre recargas), asi que su "me interesa" persiste igual que el de un USER.
         return user != null
-            && user.getUserId() != null
-            && user.getRole() != UserRole.ANON;
+            && user.getUserId() != null;
     }
 }
