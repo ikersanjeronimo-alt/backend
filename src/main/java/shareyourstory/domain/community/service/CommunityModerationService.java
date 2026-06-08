@@ -11,6 +11,7 @@ import shareyourstory.domain.community.model.CommunityBan;
 import shareyourstory.domain.community.model.CommunityMessage;
 import shareyourstory.domain.community.model.JoinedCommunity;
 import shareyourstory.domain.community.repository.CommunityBanRepository;
+import shareyourstory.domain.community.repository.CommunityMemberRepository;
 import shareyourstory.domain.community.repository.CommunityMessageRepository;
 import shareyourstory.domain.community.repository.CommunityRepository;
 import shareyourstory.domain.community.repository.JoinedCommunityRepository;
@@ -31,6 +32,9 @@ public class CommunityModerationService {
 
     @Autowired
     private JoinedCommunityRepository joinedCommunityRepository;
+
+    @Autowired
+    private CommunityMemberRepository memberRepository;
 
     @Autowired
     private CommunityBanRepository communityBanRepository;
@@ -72,6 +76,7 @@ public class CommunityModerationService {
         return saveAndBroadcastCommunity(community);
     }
 
+    @Transactional
     public Community kickMember(Long communityId, Integer targetUserId, User actor) {
         Community community = requireCommunity(communityId);
         requireModerationRights(community, actor);
@@ -85,9 +90,9 @@ public class CommunityModerationService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot kick the current moderator");
         }
 
-        if (joinedCommunityRepository.existsByCommunity_IdAndUser_UserId(communityId, targetUserId)) {
-            joinedCommunityRepository.deleteByCommunity_IdAndUser_UserId(communityId, targetUserId);
-            community.setMembers((int) joinedCommunityRepository.countByCommunity_Id(communityId));
+        if (memberRepository.existsByUserIdAndCommunityId(targetUserId, communityId)) {
+            memberRepository.deleteByUserIdAndCommunityId(targetUserId, communityId);
+            community.setMembers((int) memberRepository.countByCommunityId(communityId));
         }
 
         return saveAndBroadcastCommunity(community);
@@ -99,6 +104,7 @@ public class CommunityModerationService {
         return communityBanRepository.findByCommunity_Id(communityId);
     }
 
+    @Transactional
     public Community banMember(Long communityId, Integer targetUserId, User actor) {
         Community community = requireCommunity(communityId);
         requireModerationRights(community, actor);
@@ -117,9 +123,9 @@ public class CommunityModerationService {
         if (!communityBanRepository.existsByCommunity_IdAndUser_UserId(communityId, targetUserId)) {
             communityBanRepository.save(new CommunityBan(community, target));
         }
-        if (joinedCommunityRepository.existsByCommunity_IdAndUser_UserId(communityId, targetUserId)) {
-            joinedCommunityRepository.deleteByCommunity_IdAndUser_UserId(communityId, targetUserId);
-            community.setMembers((int) joinedCommunityRepository.countByCommunity_Id(communityId));
+        if (memberRepository.existsByUserIdAndCommunityId(targetUserId, communityId)) {
+            memberRepository.deleteByUserIdAndCommunityId(targetUserId, communityId);
+            community.setMembers((int) memberRepository.countByCommunityId(communityId));
         }
 
         return saveAndBroadcastCommunity(community);
