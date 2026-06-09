@@ -166,11 +166,15 @@ public class ModerationService {
             privateMessageService.deleteMessage(report.getMessageId());
         }
 
-        // 3) "Avisar": incrementa el contador de avisos del autor reportado.
+        // 3) "Avisar": incrementa el contador de avisos del autor reportado y le
+        //    envia el MISMO aviso en vivo por WebSocket que el "Avisar" de la lista
+        //    de miembros (solo si esta conectado). Para historias el autor es
+        //    "anonimo" -> findByUserName no encuentra usuario, asi que no hace nada.
         if (act.equals("warn") && report.getReportedUsername() != null) {
             userRepository.findByUserName(report.getReportedUsername()).ifPresent(u -> {
                 u.setWarnings(u.getWarnings() + 1);
                 userRepository.save(u);
+                webSocketService.sendUserNotification(u.getUsername(), "WARNING", u.getWarnings());
             });
         }
     }
