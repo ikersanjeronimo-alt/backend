@@ -36,6 +36,7 @@ tiempo, mapa de historias, panel de moderación). Es un **PBL**: alcance "demo f
 ## Estructura
 
 - `src/main/java/shareyourstory/` → `auth/` (JWT, SecurityConfig, RateLimit, GoogleAuth), `config/` (GlobalExceptionHandler `@RestControllerAdvice`, WebMvcConfig), `websocket/` (STOMP), `domain/` (community, event, bottle [incl. chat privado], storyMap, timeMachine, moderation, user).
+- **WebSocket = STOMP sobre WebSocket NATIVO (sin SockJS)**: el endpoint `/ws` (`WebSocketConfig`) ya **no** usa `.withSockJS()` porque el cliente (`frontend/src/lib/wsClient.ts`) abre un `new WebSocket(wss://.../ws)` directo. Eran incompatibles (SockJS sirve HTTP en `/ws` y mueve el socket a `/ws/websocket`) → el handshake fallaba en prod. No reañadir `.withSockJS()` sin migrar también el cliente a `sockjs-client`.
 - `src/main/resources/application.properties` → todo externalizado por variables de entorno con defaults de dev.
 - `db/` → 01 modelo ER, 02 usuarios/permisos, 03 backups, 04 procedimientos, 05 transacciones, 06 triggers, 07 replicación. Ver `db/README.md`.
 - 47 endpoints en 11 controladores. Inventario detallado y cruce con el front: en el `CLAUDE.md` del frontend.

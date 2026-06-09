@@ -39,9 +39,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // WebSocket nativo (sin SockJS): el cliente (lib/wsClient.ts) abre un
+        // `new WebSocket(wss://.../ws)` directo. SockJS sirve HTTP en /ws y mueve
+        // el socket real a /ws/websocket, asi que un WebSocket nativo no completa
+        // el handshake contra un endpoint SockJS. nginx ya proxia /ws con Upgrade.
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(allowedOrigins.split(","))
-                .withSockJS();
+                .setAllowedOriginPatterns(allowedOrigins.split(","));
     }
 
     @Override
