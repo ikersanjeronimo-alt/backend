@@ -62,6 +62,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             case "/api/auth/login":
             case "/api/auth/login/mod":
                 return new Rule("login", 10, Duration.ofMinutes(1));
+            case "/api/auth/refresh":
+                return new Rule("refresh", 20, Duration.ofMinutes(1));
             case "/api/auth/register":
             case "/api/auth/anonymous":
                 return new Rule("register", 20, Duration.ofMinutes(1));

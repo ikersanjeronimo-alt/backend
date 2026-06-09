@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import shareyourstory.auth.dto.AnonymousRequest;
@@ -53,6 +54,12 @@ public class AuthController {
     @PostMapping("/api/auth/login")
     public AuthResponse login(@RequestBody LoginRequest loginRequest) {
         return authService.login(loginRequest);
+    }
+
+    @PostMapping("/api/auth/refresh")
+    public AuthResponse refresh(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return authService.refresh(authHeader);
     }
 
     @PostMapping("/api/auth/register/mod")

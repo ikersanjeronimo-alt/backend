@@ -40,6 +40,7 @@ tiempo, mapa de historias, panel de moderación). Es un **PBL**: alcance "demo f
 - `src/main/resources/application.properties` → todo externalizado por variables de entorno con defaults de dev.
 - `db/` → 01 modelo ER, 02 usuarios/permisos, 03 backups, 04 procedimientos, 05 transacciones, 06 triggers, 07 replicación. Ver `db/README.md`.
 - 47 endpoints en 11 controladores. Inventario detallado y cruce con el front: en el `CLAUDE.md` del frontend.
+- **Renovación de sesión:** `POST /api/auth/refresh` (lee la cabecera `Authorization`). `JWTService.getClaimsForRefresh` acepta un token con **firma válida** aunque esté caducado, solo dentro de una **ventana de gracia** (`security.jwt.refresh-grace`, default 15 min; jjwt entrega los claims en `ExpiredJwtException.getClaims()`). `AuthService.refresh` reemite token si el usuario existe, **no es `ANON`** y no está `banned`. El front lo llama al detectar un 401 de un usuario logueado (ver `CLAUDE.md` del frontend). Rate-limit: regla `refresh` 20/min.
 
 ## Cómo arrancar
 

@@ -12,6 +12,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import io.jsonwebtoken.Claims;
 import shareyourstory.auth.JWT.JWTService;
 import shareyourstory.auth.dto.AnonymousRequest;
 import shareyourstory.auth.dto.AuthResponse;
@@ -214,6 +215,38 @@ public class AuthService {
         }
         user.setTwoFactorEnabled(true);
         userRepository.save(user);
+    }
+
+    /**
+     * Renueva la sesion de un usuario LOGUEADO a partir de su token (caducado
+     * dentro de la ventana de gracia, o aun valido). Reemite un token nuevo si
+     * la firma es valida, el usuario existe, no es anonimo y no esta baneado.
+     * Usado por POST /api/auth/refresh cuando el front detecta un 401.
+     */
+    public AuthResponse refresh(String authHeader) {
+        String token = (authHeader != null && authHeader.startsWith("Bearer "))
+                ? authHeader.substring(7) : null;
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token ausente");
+        }
+
+        Claims claims = jwtService.getClaimsForRefresh(token);
+        if (claims == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Sesion no renovable");
+        }
+
+        User user = userRepository.findByUserName(claims.getSubject())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Usuario no encontrado"));
+
+        // Solo se renuevan sesiones de usuarios logueados (no anonimos) y no baneados.
+        if (user.getRole() == UserRole.ANON) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Sesion anonima no renovable");
+        }
+        if (user.isBanned()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Usuario bloqueado");
+        }
+
+        return toAuthResponse(user);
     }
 
     public AuthResponse toAuthResponse(User user) {
