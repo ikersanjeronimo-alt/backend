@@ -65,8 +65,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
             case "/api/auth/refresh":
                 return new Rule("refresh", 20, Duration.ofMinutes(1));
             case "/api/auth/register":
-            case "/api/auth/anonymous":
                 return new Rule("register", 20, Duration.ofMinutes(1));
+            case "/api/auth/anonymous":
+                // La app crea/restaura identidad anonima en CADA carga sin token,
+                // asi que el limite ha de ser holgado; 20/min provocaba 429 al
+                // recargar (el front ahora ademas reintenta con backoff).
+                return new Rule("anonymous", 60, Duration.ofMinutes(1));
             case "/api/timeMachine":
             case "/api/letters":
                 return new Rule("mail", 5, Duration.ofMinutes(1));
