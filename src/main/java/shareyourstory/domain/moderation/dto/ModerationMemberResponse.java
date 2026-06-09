@@ -9,5 +9,6 @@ public record ModerationMemberResponse(
         String community,
         String joined,
         int reports,
+        int warnings,
         boolean banned) {
 }

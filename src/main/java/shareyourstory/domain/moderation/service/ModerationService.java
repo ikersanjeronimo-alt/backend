@@ -240,6 +240,8 @@ public class ModerationService {
         User u = requireUser(userId);
         u.setWarnings(u.getWarnings() + 1);
         userRepository.save(u);
+        // Aviso EN VIVO al miembro por WebSocket (solo lo recibe si esta conectado).
+        webSocketService.sendUserNotification(u.getUsername(), "WARNING", u.getWarnings());
         return toMember(u);
     }
 
@@ -262,6 +264,7 @@ public class ModerationService {
                 "",
                 u.getCreationDate() == null ? "" : u.getCreationDate().toString(),
                 (int) reportRepository.countByReportedUsername(u.getUsername()),
+                u.getWarnings(),
                 u.isBanned());
     }
 }

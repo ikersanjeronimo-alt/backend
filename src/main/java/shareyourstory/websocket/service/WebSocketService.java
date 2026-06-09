@@ -31,6 +31,16 @@ public class WebSocketService {
         simpMessagingTemplate.convertAndSendToUser(username, "/queue/private", message);
     }
 
+    // Aviso personal (p. ej. un aviso de moderacion) a la cola del usuario
+    // (/user/queue/notifications). Solo lo reciben las sesiones STOMP de ese
+    // Principal y solo si esta conectado en ese momento (aviso en vivo).
+    public void sendUserNotification(String username, String type, int warnings) {
+        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("type", type);
+        payload.put("warnings", warnings);
+        simpMessagingTemplate.convertAndSendToUser(username, "/queue/notifications", payload);
+    }
+
     public void broadcastCommunityMessage(String communityId, CommunityMessageDTO message) {
         simpMessagingTemplate.convertAndSend("/topic/communities/" + communityId, message);
     }
