@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import shareyourstory.domain.community.model.Community;
+import shareyourstory.domain.event.DTO.EventFormDTO;
 import shareyourstory.domain.event.model.Event;
 import shareyourstory.domain.storyMap.model.StoryMap;
 
@@ -23,6 +24,17 @@ public class WebSocketService {
 
     public void broadcastEventChange(String action, Event event) {
         simpMessagingTemplate.convertAndSend("/topic/events", new EventMessageDTO(action, event));
+    }
+
+    // Estado del cuestionario de un evento a quien lo tenga abierto. Se envia la
+    // version PUBLICA (sin datos por-usuario). form == null significa "se borro".
+    // Se envuelve en un Map porque convertAndSend no admite payload null.
+    public void broadcastEventForm(Integer eventId, EventFormDTO form) {
+        java.util.Map<String, Object> payload = new java.util.HashMap<>();
+        payload.put("form", form);
+        // Cast a Object para elegir convertAndSend(destino, payload) y evitar la
+        // ambiguedad con la sobrecarga convertAndSend(payload, headers) que toma Map.
+        simpMessagingTemplate.convertAndSend("/topic/events/" + eventId + "/form", (Object) payload);
     }
 
     // Entrega a la cola personal del usuario (/user/queue/private); Spring lo

@@ -46,6 +46,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/register/mod/**").hasRole("ADMINISTRATOR")
                         .requestMatchers("/api/auth/**").permitAll()
+                        // Cuestionario de evento: ver/votar/responder = cualquier autenticado
+                        // (anonimo incluido); crear/borrar = profesional/admin. DEBE ir antes
+                        // del permitAll de GET /api/events/** para que gane el match mas especifico.
+                        .requestMatchers(HttpMethod.GET, "/api/events/*/form").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/form/vote").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/form/response").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/events/*/form")
+                        .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
+                        .requestMatchers(HttpMethod.DELETE, "/api/events/*/form")
+                        .hasAnyRole("PROFESSIONAL", "ADMINISTRATOR")
                         .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/events/*/interest").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/events/*/interest").authenticated()
